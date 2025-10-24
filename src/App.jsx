@@ -9,7 +9,7 @@ import ImageDisplay from './components/ImageDisplay';
 import Separator from './components/Separator';
 import { 
   extractColors, 
-  applyPalette, 
+  generatePaletteVariations,
   generateSimilarPalettes,
   rgbToHex 
 } from './utils/colorUtils';
@@ -19,7 +19,7 @@ function App() {
   const [originalImageData, setOriginalImageData] = createSignal(null);
   const [selectedPaletteName, setSelectedPaletteName] = createSignal(null);
   const [currentPalette, setCurrentPalette] = createSignal(null);
-  const [processedImages, setProcessedImages] = createSignal([]);
+  const [processedVariations, setProcessedVariations] = createSignal([]);
   const [similarPaletteImages, setSimilarPaletteImages] = createSignal([]);
   const [selectedImageData, setSelectedImageData] = createSignal(null);
   const [finalPalette, setFinalPalette] = createSignal(null);
@@ -45,20 +45,21 @@ function App() {
     setSelectedPaletteName(name);
     setCurrentPalette(palette);
     
-    // Generate images with the selected palette
+    // Generate images with the selected palette using all 6 different strategies
     if (originalImageData()) {
       const imageData = originalImageData();
       
-      // Apply selected palette three times (same result, different references for UI)
-      const result1 = applyPalette(imageData, palette);
-      const result2 = applyPalette(imageData, palette);
-      const result3 = applyPalette(imageData, palette);
+      // Generate all 6 variations with different color matching strategies
+      const variations = generatePaletteVariations(imageData, palette);
       
       // Generate similar palettes and apply them
       const similarPalettes = generateSimilarPalettes(palette, 3);
-      const similarResults = similarPalettes.map(p => applyPalette(imageData, p));
+      const similarResults = similarPalettes.map(p => {
+        const vars = generatePaletteVariations(imageData, p);
+        return vars[0]; // Use luminosity match for similar palettes
+      });
       
-      setProcessedImages([result1, result2, result3]);
+      setProcessedVariations(variations);
       setSimilarPaletteImages(similarResults);
     }
   };
@@ -74,10 +75,10 @@ function App() {
   const handlePaletteEdit = (newPalette) => {
     setFinalPalette(newPalette);
     
-    // Reapply palette to original image
+    // Reapply palette to original image using standard matching
     if (originalImageData()) {
-      const result = applyPalette(originalImageData(), newPalette);
-      setSelectedImageData(result);
+      const variations = generatePaletteVariations(originalImageData(), newPalette);
+      setSelectedImageData(variations[5].imageData); // Use perceptual match
     }
   };
 
@@ -173,15 +174,16 @@ function App() {
           </Show>
 
           {/* Step 3: View Results */}
-          <Show when={processedImages().length > 0}>
+          <Show when={processedVariations().length > 0}>
             <div class="bg-white rounded-xl shadow-lg p-8 transition-all hover:shadow-xl">
               <h2 class="text-2xl font-semibold mb-6 text-gray-800">Step 3: Choose Your Favorite</h2>
               
               <div class="mb-8">
                 <ImageGallery 
-                  title="Selected Palette Variations"
-                  images={processedImages()}
-                  labels={['Variation 1', 'Variation 2', 'Variation 3']}
+                  title="Color Matching Variations"
+                  images={processedVariations().map(v => v.imageData)}
+                  labels={processedVariations().map(v => v.name)}
+                  descriptions={processedVariations().map(v => v.description)}
                   onSelect={handleImageSelect}
                 />
               </div>
@@ -191,9 +193,9 @@ function App() {
               <div class="mt-8">
                 <ImageGallery 
                   title="Similar Palettes"
-                  images={similarPaletteImages()}
+                  images={similarPaletteImages().map(v => v.imageData)}
                   labels={['Similar 1', 'Similar 2', 'Similar 3']}
-                  onSelect={handleImageSelect}
+                  onSelect={(imageData, index) => handleImageSelect(imageData, index + 6)}
                 />
               </div>
             </div>

@@ -11,7 +11,7 @@ export default function ImageGallery(props) {
   return (
     <div class="w-full">
       <h3 class="text-lg font-semibold mb-4">{props.title}</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <For each={props.images}>
           {(imageData, index) => (
             <div
@@ -45,6 +45,11 @@ export default function ImageGallery(props) {
               <Show when={props.labels && props.labels[index()]}>
                 <p class="text-sm font-medium text-gray-700 mt-3 text-center">
                   {props.labels[index()]}
+                </p>
+              </Show>
+              <Show when={props.descriptions && props.descriptions[index()]}>
+                <p class="text-xs text-gray-500 mt-1 text-center">
+                  {props.descriptions[index()]}
                 </p>
               </Show>
             </div>

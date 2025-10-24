@@ -7,7 +7,13 @@ A web application for analyzing and remapping pixel art color palettes. Built wi
 - **Image Upload**: Upload pixel art images via drag-and-drop or file selection
 - **Palette Selection**: Choose from 6 classic pixel art palettes (Game Boy, NES, Pico-8, C64, ENDESGA 32, Sweetie 16)
 - **Custom Palettes**: Upload hex color files to create custom palettes
-- **Automatic Color Remapping**: Generates 3 variations with the selected palette
+- **6 Color Matching Strategies**: Generates 6 variations using different algorithms:
+  - **Luminosity Match**: Preserves light/dark contrast by matching brightness
+  - **Hue Match**: Maintains color families (reds stay red-ish, blues stay blue-ish)
+  - **Saturation Match**: Matches color vividness (vibrant vs muted)
+  - **Inverted Luminosity**: Creates dramatic inversions (dark ↔ light)
+  - **Complementary Hue**: Maps to opposite colors on the color wheel
+  - **Perceptual Match**: Standard RGB distance matching
 - **Similar Palette Generation**: Creates 3 additional variations with similar color schemes
 - **Interactive Palette Editor**: Manually adjust colors with a visual color picker
 - **Download Options**: Download both the recolored image and the palette as a hex color file
@@ -16,7 +22,9 @@ A web application for analyzing and remapping pixel art color palettes. Built wi
 
 1. **Upload an Image**: Click or drag-and-drop a pixel art image
 2. **Select a Palette**: Choose from predefined palettes or upload a custom hex color file
-3. **Review Results**: View 6 different versions of your image (3 with selected palette, 3 with similar palettes)
+3. **Review Results**: View 9 different versions of your image:
+   - 6 variations using different color matching algorithms
+   - 3 variations with algorithmically generated similar palettes
 4. **Refine**: Select your favorite version and fine-tune the colors
 5. **Download**: Save the recolored image and/or the color palette
 

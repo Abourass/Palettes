@@ -56,13 +56,168 @@ export function colorDistance(c1, c2) {
   );
 }
 
-// Find closest color in palette
+// Calculate perceived luminance (brightness)
+export function getLuminance(color) {
+  // Standard luminance formula accounting for human eye sensitivity
+  return 0.299 * color.r + 0.587 * color.g + 0.114 * color.b;
+}
+
+// Calculate saturation from RGB
+export function getSaturation(color) {
+  const r = color.r / 255;
+  const g = color.g / 255;
+  const b = color.b / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  
+  if (max === 0) return 0;
+  return (max - min) / max;
+}
+
+// Get hue from RGB (returns 0-360)
+export function getHue(color) {
+  const hsl = rgbToHsl(color.r, color.g, color.b);
+  return hsl.h;
+}
+
+// Calculate circular hue distance (accounts for 360° wraparound)
+export function hueDistance(h1, h2) {
+  const diff = Math.abs(h1 - h2);
+  return Math.min(diff, 360 - diff);
+}
+
+// Find closest color in palette (standard Euclidean RGB distance)
 export function findClosestColor(color, palette) {
   let minDistance = Infinity;
   let closestColor = palette[0];
 
   for (const paletteColor of palette) {
     const distance = colorDistance(color, paletteColor);
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestColor = paletteColor;
+    }
+  }
+
+  return closestColor;
+}
+
+// Find closest color by luminosity (brightness matching)
+export function findClosestByLuminosity(color, palette) {
+  const targetLuminance = getLuminance(color);
+  let minDistance = Infinity;
+  let closestColor = palette[0];
+
+  for (const paletteColor of palette) {
+    const distance = Math.abs(getLuminance(paletteColor) - targetLuminance);
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestColor = paletteColor;
+    }
+  }
+
+  return closestColor;
+}
+
+// Find closest color by hue (color family matching)
+export function findClosestByHue(color, palette) {
+  const targetHue = getHue(color);
+  const targetLuminance = getLuminance(color);
+  let minDistance = Infinity;
+  let closestColor = palette[0];
+
+  for (const paletteColor of palette) {
+    const paletteHue = getHue(paletteColor);
+    const paletteLuminance = getLuminance(paletteColor);
+    
+    // Weight hue heavily, luminance as tiebreaker
+    const hueDist = hueDistance(targetHue, paletteHue);
+    const lumDist = Math.abs(targetLuminance - paletteLuminance) / 255;
+    const distance = hueDist + (lumDist * 10); // Hue is primary, luminance secondary
+    
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestColor = paletteColor;
+    }
+  }
+
+  return closestColor;
+}
+
+// Find closest color by saturation
+export function findClosestBySaturation(color, palette) {
+  const targetSaturation = getSaturation(color);
+  const targetLuminance = getLuminance(color);
+  let minDistance = Infinity;
+  let closestColor = palette[0];
+
+  for (const paletteColor of palette) {
+    const satDist = Math.abs(getSaturation(paletteColor) - targetSaturation);
+    const lumDist = Math.abs(getLuminance(paletteColor) - targetLuminance) / 255;
+    const distance = satDist + (lumDist * 0.5); // Saturation primary, luminance secondary
+    
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestColor = paletteColor;
+    }
+  }
+
+  return closestColor;
+}
+
+// Find inverted luminosity match (dark -> light, light -> dark)
+export function findInvertedLuminosity(color, palette) {
+  const targetLuminance = 255 - getLuminance(color); // Invert brightness
+  let minDistance = Infinity;
+  let closestColor = palette[0];
+
+  for (const paletteColor of palette) {
+    const distance = Math.abs(getLuminance(paletteColor) - targetLuminance);
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestColor = paletteColor;
+    }
+  }
+
+  return closestColor;
+}
+
+// Find complementary hue match (opposite on color wheel)
+export function findComplementaryHue(color, palette) {
+  const targetHue = (getHue(color) + 180) % 360; // Opposite hue
+  const targetLuminance = getLuminance(color);
+  let minDistance = Infinity;
+  let closestColor = palette[0];
+
+  for (const paletteColor of palette) {
+    const paletteHue = getHue(paletteColor);
+    const paletteLuminance = getLuminance(paletteColor);
+    
+    const hueDist = hueDistance(targetHue, paletteHue);
+    const lumDist = Math.abs(targetLuminance - paletteLuminance) / 255;
+    const distance = hueDist + (lumDist * 10);
+    
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestColor = paletteColor;
+    }
+  }
+
+  return closestColor;
+}
+
+// Weighted RGB distance with custom channel emphasis
+export function findWeightedRGB(color, palette, weights = { r: 1, g: 1, b: 1 }) {
+  let minDistance = Infinity;
+  let closestColor = palette[0];
+
+  for (const paletteColor of palette) {
+    const distance = Math.sqrt(
+      Math.pow((color.r - paletteColor.r) * weights.r, 2) +
+      Math.pow((color.g - paletteColor.g) * weights.g, 2) +
+      Math.pow((color.b - paletteColor.b) * weights.b, 2)
+    );
+    
     if (distance < minDistance) {
       minDistance = distance;
       closestColor = paletteColor;
@@ -100,6 +255,72 @@ export function applyPalette(imageData, palette) {
   }
 
   return newImageData;
+}
+
+// Apply palette with custom matching strategy
+export function applyPaletteWithStrategy(imageData, palette, matchingFunction) {
+  const newImageData = new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height
+  );
+  
+  const pixels = newImageData.data;
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+    const a = pixels[i + 3];
+
+    // Skip transparent pixels
+    if (a < 128) continue;
+
+    const currentColor = { r, g, b };
+    const closestColor = matchingFunction(currentColor, palette);
+
+    pixels[i] = closestColor.r;
+    pixels[i + 1] = closestColor.g;
+    pixels[i + 2] = closestColor.b;
+  }
+
+  return newImageData;
+}
+
+// Generate all 6 variations using different strategies
+export function generatePaletteVariations(imageData, palette) {
+  return [
+    {
+      name: 'Luminosity Match',
+      description: 'Matches by brightness, preserving light/dark contrast',
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByLuminosity)
+    },
+    {
+      name: 'Hue Match',
+      description: 'Matches by color family, preserving the mood',
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByHue)
+    },
+    {
+      name: 'Saturation Match',
+      description: 'Matches by color vividness (vibrant vs muted)',
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestBySaturation)
+    },
+    {
+      name: 'Inverted Luminosity',
+      description: 'Inverts brightness (dark becomes light, light becomes dark)',
+      imageData: applyPaletteWithStrategy(imageData, palette, findInvertedLuminosity)
+    },
+    {
+      name: 'Complementary Hue',
+      description: 'Maps to opposite colors on the color wheel',
+      imageData: applyPaletteWithStrategy(imageData, palette, findComplementaryHue)
+    },
+    {
+      name: 'Perceptual Match',
+      description: 'Standard RGB distance matching',
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestColor)
+    }
+  ];
 }
 
 // Generate similar palettes by adjusting hue, saturation, brightness
