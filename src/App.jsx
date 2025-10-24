@@ -89,7 +89,10 @@ function App() {
         setSimilarPaletteImages(similarResults);
       } catch (error) {
         console.error('Error processing image:', error);
-        alert('Failed to process image: ' + error.message);
+        // Show error in the UI instead of blocking with alert
+        setProcessingMessage('Error: ' + error.message);
+        setTimeout(() => setIsProcessing(false), 3000);
+        return;
       } finally {
         setIsProcessing(false);
         setProcessingMessage('');
@@ -109,7 +112,9 @@ function App() {
       setFinalPalette(colors);
     } catch (error) {
       console.error('Error extracting colors:', error);
-      alert('Failed to extract colors: ' + error.message);
+      setProcessingMessage('Error: ' + error.message);
+      setTimeout(() => setIsProcessing(false), 3000);
+      return;
     } finally {
       setIsProcessing(false);
       setProcessingMessage('');
@@ -136,7 +141,9 @@ function App() {
         setSelectedImageData(result.imageData);
       } catch (error) {
         console.error('Error applying palette:', error);
-        alert('Failed to apply palette: ' + error.message);
+        setProcessingMessage('Error: ' + error.message);
+        setTimeout(() => setIsProcessing(false), 3000);
+        return;
       } finally {
         setIsProcessing(false);
         setProcessingMessage('');
