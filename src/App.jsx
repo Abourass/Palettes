@@ -1,4 +1,4 @@
-import { createSignal, Show } from 'solid-js';
+import { createSignal, Show, onCleanup } from 'solid-js';
 import ImageUpload from './components/ImageUpload';
 import PaletteSelector from './components/PaletteSelector';
 import ImageGallery from './components/ImageGallery';
@@ -10,12 +10,9 @@ import ColorHarmonyGenerator from './components/ColorHarmonyGenerator';
 import Button from './components/Button';
 import ImageDisplay from './components/ImageDisplay';
 import Separator from './components/Separator';
-import { 
-  extractColors, 
-  generatePaletteVariations,
-  generateSimilarPalettes,
-  rgbToHex 
-} from './utils/colorUtils';
+import LoadingIndicator from './components/LoadingIndicator';
+import { rgbToHex } from './utils/colorUtils';
+import { getWorkerManager, terminateWorkerManager } from './utils/workerManager';
 
 function App() {
   const [uploadedImage, setUploadedImage] = createSignal(null);
@@ -28,6 +25,16 @@ function App() {
   const [finalPalette, setFinalPalette] = createSignal(null);
   const [ditheringMethod, setDitheringMethod] = createSignal('none');
   const [quantizationMode, setQuantizationMode] = createSignal('preserve');
+  const [isProcessing, setIsProcessing] = createSignal(false);
+  const [processingMessage, setProcessingMessage] = createSignal('');
+
+  // Get worker manager instance
+  const workerManager = getWorkerManager();
+
+  // Cleanup worker on component unmount
+  onCleanup(() => {
+    terminateWorkerManager();
+  });
 
   const handleImageLoad = (dataUrl) => {
     setUploadedImage(dataUrl);
@@ -46,46 +53,101 @@ function App() {
     img.src = dataUrl;
   };
 
-  const handlePaletteSelect = (name, palette) => {
+  const handlePaletteSelect = async (name, palette) => {
     setSelectedPaletteName(name);
     setCurrentPalette(palette);
     
     // Generate images with the selected palette using all 6 different strategies
     if (originalImageData()) {
-      const imageData = originalImageData();
-      const preserveDistinctness = quantizationMode() === 'preserve';
+      setIsProcessing(true);
+      setProcessingMessage('Generating palette variations...');
       
-      // Generate all 6 variations with different color matching strategies
-      const variations = generatePaletteVariations(imageData, palette, ditheringMethod(), preserveDistinctness);
-      
-      // Generate 6 similar palettes and apply them
-      const similarPalettes = generateSimilarPalettes(palette, 6);
-      const similarResults = similarPalettes.map(p => {
-        const vars = generatePaletteVariations(imageData, p, ditheringMethod(), preserveDistinctness);
-        return vars[0]; // Use luminosity match for similar palettes
-      });
-      
-      setProcessedVariations(variations);
-      setSimilarPaletteImages(similarResults);
+      try {
+        const imageData = originalImageData();
+        const preserveDistinctness = quantizationMode() === 'preserve';
+        
+        // Generate all 6 variations with different color matching strategies (in worker)
+        const variations = await workerManager.generateVariations(
+          imageData,
+          palette,
+          ditheringMethod(),
+          preserveDistinctness
+        );
+        
+        setProcessingMessage('Generating similar palettes...');
+        
+        // Generate 6 similar palettes and apply them (in worker)
+        const similarResults = await workerManager.generateSimilarPalettes(
+          imageData,
+          palette,
+          ditheringMethod(),
+          preserveDistinctness,
+          6
+        );
+        
+        setProcessedVariations(variations);
+        setSimilarPaletteImages(similarResults);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        // Show error in the UI instead of blocking with alert
+        setProcessingMessage('Error: ' + error.message);
+        setTimeout(() => setIsProcessing(false), 3000);
+        return;
+      } finally {
+        setIsProcessing(false);
+        setProcessingMessage('');
+      }
     }
   };
 
-  const handleImageSelect = (imageData, index) => {
+  const handleImageSelect = async (imageData, index) => {
     setSelectedImageData(imageData);
     
     // Extract colors from selected image to use as refined palette
-    const colors = extractColors(imageData, 16);
-    setFinalPalette(colors);
+    setIsProcessing(true);
+    setProcessingMessage('Extracting colors from selected image...');
+    
+    try {
+      const colors = await workerManager.extractColors(imageData, 16);
+      setFinalPalette(colors);
+    } catch (error) {
+      console.error('Error extracting colors:', error);
+      setProcessingMessage('Error: ' + error.message);
+      setTimeout(() => setIsProcessing(false), 3000);
+      return;
+    } finally {
+      setIsProcessing(false);
+      setProcessingMessage('');
+    }
   };
 
-  const handlePaletteEdit = (newPalette) => {
+  const handlePaletteEdit = async (newPalette) => {
     setFinalPalette(newPalette);
     
     // Reapply palette to original image using standard matching
     if (originalImageData()) {
-      const preserveDistinctness = quantizationMode() === 'preserve';
-      const variations = generatePaletteVariations(originalImageData(), newPalette, ditheringMethod(), preserveDistinctness);
-      setSelectedImageData(variations[5].imageData); // Use perceptual match
+      setIsProcessing(true);
+      setProcessingMessage('Applying edited palette...');
+      
+      try {
+        const preserveDistinctness = quantizationMode() === 'preserve';
+        const result = await workerManager.applyPalette(
+          originalImageData(),
+          newPalette,
+          ditheringMethod(),
+          preserveDistinctness,
+          'perceptual'
+        );
+        setSelectedImageData(result.imageData);
+      } catch (error) {
+        console.error('Error applying palette:', error);
+        setProcessingMessage('Error: ' + error.message);
+        setTimeout(() => setIsProcessing(false), 3000);
+        return;
+      } finally {
+        setIsProcessing(false);
+        setProcessingMessage('');
+      }
     }
   };
 
@@ -156,6 +218,8 @@ function App() {
 
   return (
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+      <LoadingIndicator show={isProcessing()} message={processingMessage()} />
+      
       <div class="max-w-7xl mx-auto">
         <header class="text-center mb-12">
           <h1 class="text-5xl font-bold text-gray-900 mb-3 tracking-tight">
