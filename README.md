@@ -96,6 +96,38 @@ npm run build
 
 # Preview production build
 npm run preview
+
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run tests with interactive UI
+npm run test:ui
+```
+
+## Testing
+
+This project includes comprehensive automated tests for core functionality:
+- **103 tests** covering color utilities, harmony generation, and palettes
+- **61% overall code coverage** with 90%+ coverage of critical algorithms
+- Tests run automatically on every pull request
+
+For detailed testing documentation, see [TESTING.md](TESTING.md).
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Generate coverage report
+pnpm test:coverage
 ```
 
 ## Hex Color File Format
