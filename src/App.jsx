@@ -5,6 +5,7 @@ import ImageGallery from './components/ImageGallery';
 import PaletteEditor from './components/PaletteEditor';
 import HexFileUpload from './components/HexFileUpload';
 import DitheringSelector from './components/DitheringSelector';
+import ColorHarmonyGenerator from './components/ColorHarmonyGenerator';
 import Button from './components/Button';
 import ImageDisplay from './components/ImageDisplay';
 import Separator from './components/Separator';
@@ -99,6 +100,12 @@ function App() {
     handlePaletteSelect('Custom', palette);
   };
 
+  const handleHarmonyPaletteGenerated = (palette, name) => {
+    setSelectedPaletteName(name);
+    setCurrentPalette(palette);
+    handlePaletteSelect(name, palette);
+  };
+
   const downloadPalette = () => {
     if (!finalPalette()) return;
     
@@ -170,12 +177,14 @@ function App() {
               <h2 class="text-2xl font-semibold mb-6 text-gray-800">Step 2: Choose Palette & Dithering</h2>
               
               <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Upload Custom Palette</h3>
                 <HexFileUpload onPaletteLoad={handleCustomPaletteLoad} />
               </div>
               
               <Separator />
               
               <div class="mt-6 mb-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Choose Preset Palette</h3>
                 <PaletteSelector 
                   selectedPalette={selectedPaletteName()}
                   onSelect={handlePaletteSelect}
@@ -184,7 +193,18 @@ function App() {
               
               <Separator />
               
+              <div class="mt-6 mb-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Generate Color Harmony</h3>
+                <ColorHarmonyGenerator
+                  imageData={originalImageData()}
+                  onPaletteGenerated={handleHarmonyPaletteGenerated}
+                />
+              </div>
+              
+              <Separator />
+              
               <div class="mt-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Dithering Method</h3>
                 <DitheringSelector
                   selected={ditheringMethod()}
                   onSelect={handleDitheringChange}

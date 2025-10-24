@@ -1,12 +1,17 @@
 # Palette Analyzer
 
-A web application for analyzing and remapping pixel art color palettes with advanced dithering options. Built with SolidJS, Tailwind CSS, and Kobalte.
+A web application for analyzing and remapping pixel art color palettes with advanced dithering options and color harmony generation. Built with SolidJS, Tailwind CSS, and Kobalte.
 
 ## Features
 
 - **Image Upload**: Upload pixel art images via drag-and-drop or file selection
 - **Palette Selection**: Choose from 6 classic pixel art palettes (Game Boy, NES, Pico-8, C64, ENDESGA 32, Sweetie 16)
 - **Custom Palettes**: Upload hex color files to create custom palettes
+- **Color Harmony Generator**: 🎨 **NEW!** Create theoretically-sound palettes from color theory
+  - **7 Harmony Types**: Complementary, Analogous, Triadic, Split-Complementary, Tetradic, Monochromatic, Compound
+  - **Generate from Color**: Pick a base color and generate harmonies
+  - **Extract from Image**: Auto-extract dominant colors using K-Means or Median Cut algorithms
+  - **Smart Variations**: Each harmony includes lightness and saturation variations
 - **Dithering Options**: 4 dithering methods to create smoother color transitions:
   - **No Dithering**: Clean, sharp color transitions
   - **Floyd-Steinberg**: Most popular error diffusion, smooth gradients (recommended)
@@ -26,12 +31,42 @@ A web application for analyzing and remapping pixel art color palettes with adva
 ## Usage
 
 1. **Upload an Image**: Click or drag-and-drop a pixel art image
-2. **Select a Palette & Dithering**: Choose from predefined palettes or upload a custom hex color file, then select a dithering method
+2. **Choose Your Palette Source**:
+   - Upload a custom hex color file
+   - Select from preset palettes
+   - **🎨 Generate from Color Harmony** (pick a color or extract from image)
+   - Select a dithering method
 3. **Review Results**: View 12 different versions of your image:
    - 6 variations using different color matching algorithms (with selected dithering)
    - 6 variations with algorithmically generated similar palettes
 4. **Refine**: Select your favorite version and fine-tune the colors
 5. **Download**: Save the recolored image and/or the color palette
+
+## Color Harmony Generator
+
+Generate beautiful, theoretically-sound color palettes:
+
+### From Base Color
+1. Pick any color as your starting point
+2. Generate 7 harmony types based on color theory
+3. Choose your favorite harmony
+
+### From Image
+1. Upload an image
+2. Choose extraction method (K-Means or Median Cut)
+3. Auto-extract dominant colors
+4. Generate harmonies from extracted colors
+
+### Harmony Types
+- **Complementary**: Opposite colors (high contrast)
+- **Analogous**: Adjacent colors (harmonious)
+- **Triadic**: Three evenly-spaced colors (balanced)
+- **Split-Complementary**: Sophisticated contrast
+- **Tetradic**: Four evenly-spaced colors (rich)
+- **Monochromatic**: Single hue variations (elegant)
+- **Compound**: Two complementary pairs (complex)
+
+For complete guide, see [COLOR_HARMONY.md](COLOR_HARMONY.md) or [Quick Reference](COLOR_HARMONY_QUICK_REF.md)
 
 ## Dithering Guide
 
