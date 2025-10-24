@@ -1,12 +1,17 @@
 # Palette Analyzer
 
-A web application for analyzing and remapping pixel art color palettes. Built with SolidJS, Tailwind CSS, and Kobalte.
+A web application for analyzing and remapping pixel art color palettes with advanced dithering options. Built with SolidJS, Tailwind CSS, and Kobalte.
 
 ## Features
 
 - **Image Upload**: Upload pixel art images via drag-and-drop or file selection
 - **Palette Selection**: Choose from 6 classic pixel art palettes (Game Boy, NES, Pico-8, C64, ENDESGA 32, Sweetie 16)
 - **Custom Palettes**: Upload hex color files to create custom palettes
+- **Dithering Options**: 4 dithering methods to create smoother color transitions:
+  - **No Dithering**: Clean, sharp color transitions
+  - **Floyd-Steinberg**: Most popular error diffusion, smooth gradients (recommended)
+  - **Ordered/Bayer**: Retro crosshatch pattern for vintage aesthetic
+  - **Atkinson**: HyperCard/MacPaint style, preserves highlights
 - **6 Color Matching Strategies**: Generates 6 variations using different algorithms:
   - **Luminosity Match**: Preserves light/dark contrast by matching brightness
   - **Hue Match**: Maintains color families (reds stay red-ish, blues stay blue-ish)
@@ -14,19 +19,30 @@ A web application for analyzing and remapping pixel art color palettes. Built wi
   - **Inverted Luminosity**: Creates dramatic inversions (dark ↔ light)
   - **Complementary Hue**: Maps to opposite colors on the color wheel
   - **Perceptual Match**: Standard RGB distance matching
-- **Similar Palette Generation**: Creates 3 additional variations with similar color schemes
+- **Similar Palette Generation**: Creates 6 additional variations with similar color schemes
 - **Interactive Palette Editor**: Manually adjust colors with a visual color picker
 - **Download Options**: Download both the recolored image and the palette as a hex color file
 
 ## Usage
 
 1. **Upload an Image**: Click or drag-and-drop a pixel art image
-2. **Select a Palette**: Choose from predefined palettes or upload a custom hex color file
+2. **Select a Palette & Dithering**: Choose from predefined palettes or upload a custom hex color file, then select a dithering method
 3. **Review Results**: View 12 different versions of your image:
-   - 6 variations using different color matching algorithms
+   - 6 variations using different color matching algorithms (with selected dithering)
    - 6 variations with algorithmically generated similar palettes
 4. **Refine**: Select your favorite version and fine-tune the colors
 5. **Download**: Save the recolored image and/or the color palette
+
+## Dithering Guide
+
+### When to Use Each Method
+
+- **No Dithering**: Best for pixel art that already has clean, limited colors
+- **Floyd-Steinberg**: Best for photographs and smooth gradients
+- **Ordered/Bayer**: Best for retro/vintage aesthetic, consistent patterns
+- **Atkinson**: Best for high-contrast images, comic art, preserving highlights
+
+For more details, see [DITHERING_GUIDE.md](DITHERING_GUIDE.md)
 
 ## Development
 

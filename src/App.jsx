@@ -4,6 +4,7 @@ import PaletteSelector from './components/PaletteSelector';
 import ImageGallery from './components/ImageGallery';
 import PaletteEditor from './components/PaletteEditor';
 import HexFileUpload from './components/HexFileUpload';
+import DitheringSelector from './components/DitheringSelector';
 import Button from './components/Button';
 import ImageDisplay from './components/ImageDisplay';
 import Separator from './components/Separator';
@@ -23,6 +24,7 @@ function App() {
   const [similarPaletteImages, setSimilarPaletteImages] = createSignal([]);
   const [selectedImageData, setSelectedImageData] = createSignal(null);
   const [finalPalette, setFinalPalette] = createSignal(null);
+  const [ditheringMethod, setDitheringMethod] = createSignal('none');
 
   const handleImageLoad = (dataUrl) => {
     setUploadedImage(dataUrl);
@@ -50,12 +52,12 @@ function App() {
       const imageData = originalImageData();
       
       // Generate all 6 variations with different color matching strategies
-      const variations = generatePaletteVariations(imageData, palette);
+      const variations = generatePaletteVariations(imageData, palette, ditheringMethod());
       
       // Generate 6 similar palettes and apply them
       const similarPalettes = generateSimilarPalettes(palette, 6);
       const similarResults = similarPalettes.map(p => {
-        const vars = generatePaletteVariations(imageData, p);
+        const vars = generatePaletteVariations(imageData, p, ditheringMethod());
         return vars[0]; // Use luminosity match for similar palettes
       });
       
@@ -77,8 +79,17 @@ function App() {
     
     // Reapply palette to original image using standard matching
     if (originalImageData()) {
-      const variations = generatePaletteVariations(originalImageData(), newPalette);
+      const variations = generatePaletteVariations(originalImageData(), newPalette, ditheringMethod());
       setSelectedImageData(variations[5].imageData); // Use perceptual match
+    }
+  };
+
+  const handleDitheringChange = (method) => {
+    setDitheringMethod(method);
+    
+    // Regenerate variations if palette is already selected
+    if (currentPalette() && originalImageData()) {
+      handlePaletteSelect(selectedPaletteName(), currentPalette());
     }
   };
 
@@ -156,7 +167,7 @@ function App() {
           {/* Step 2: Select or Upload Palette */}
           <Show when={uploadedImage()}>
             <div class="bg-white rounded-xl shadow-lg p-8 transition-all hover:shadow-xl">
-              <h2 class="text-2xl font-semibold mb-6 text-gray-800">Step 2: Choose Palette</h2>
+              <h2 class="text-2xl font-semibold mb-6 text-gray-800">Step 2: Choose Palette & Dithering</h2>
               
               <div class="mb-6">
                 <HexFileUpload onPaletteLoad={handleCustomPaletteLoad} />
@@ -164,10 +175,19 @@ function App() {
               
               <Separator />
               
-              <div class="mt-6">
+              <div class="mt-6 mb-6">
                 <PaletteSelector 
                   selectedPalette={selectedPaletteName()}
                   onSelect={handlePaletteSelect}
+                />
+              </div>
+              
+              <Separator />
+              
+              <div class="mt-6">
+                <DitheringSelector
+                  selected={ditheringMethod()}
+                  onSelect={handleDitheringChange}
                 />
               </div>
             </div>

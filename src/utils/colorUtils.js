@@ -257,8 +257,248 @@ export function applyPalette(imageData, palette) {
   return newImageData;
 }
 
-// Apply palette with custom matching strategy
-export function applyPaletteWithStrategy(imageData, palette, matchingFunction) {
+// Floyd-Steinberg dithering - distributes quantization error to neighboring pixels
+export function applyFloydSteinbergDithering(imageData, palette, matchingFunction = findClosestColor) {
+  const width = imageData.width;
+  const height = imageData.height;
+  const newImageData = new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height
+  );
+  
+  const pixels = newImageData.data;
+
+  // Helper to get pixel index
+  const getIndex = (x, y) => (y * width + x) * 4;
+
+  // Helper to distribute error to a neighboring pixel
+  const distributeError = (x, y, errorR, errorG, errorB, factor) => {
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
+    
+    const idx = getIndex(x, y);
+    const alpha = pixels[idx + 3];
+    
+    // Only distribute to non-transparent pixels
+    if (alpha >= 128) {
+      pixels[idx] = Math.max(0, Math.min(255, pixels[idx] + errorR * factor));
+      pixels[idx + 1] = Math.max(0, Math.min(255, pixels[idx + 1] + errorG * factor));
+      pixels[idx + 2] = Math.max(0, Math.min(255, pixels[idx + 2] + errorB * factor));
+    }
+  };
+
+  // Process pixels left-to-right, top-to-bottom
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = getIndex(x, y);
+      
+      const r = pixels[idx];
+      const g = pixels[idx + 1];
+      const b = pixels[idx + 2];
+      const a = pixels[idx + 3];
+
+      // Skip transparent pixels
+      if (a < 128) continue;
+
+      // Find closest palette color
+      const currentColor = { r, g, b };
+      const closestColor = matchingFunction(currentColor, palette);
+
+      // Calculate quantization error
+      const errorR = r - closestColor.r;
+      const errorG = g - closestColor.g;
+      const errorB = b - closestColor.b;
+
+      // Set the pixel to the palette color
+      pixels[idx] = closestColor.r;
+      pixels[idx + 1] = closestColor.g;
+      pixels[idx + 2] = closestColor.b;
+
+      // Distribute error to neighboring pixels (Floyd-Steinberg matrix)
+      //        X    7/16
+      // 3/16  5/16  1/16
+      distributeError(x + 1, y, errorR, errorG, errorB, 7/16);
+      distributeError(x - 1, y + 1, errorR, errorG, errorB, 3/16);
+      distributeError(x, y + 1, errorR, errorG, errorB, 5/16);
+      distributeError(x + 1, y + 1, errorR, errorG, errorB, 1/16);
+    }
+  }
+
+  return newImageData;
+}
+
+// Ordered/Bayer dithering - uses a threshold map for retro aesthetic
+export function applyOrderedDithering(imageData, palette, matchingFunction = findClosestColor, matrixSize = 4) {
+  const width = imageData.width;
+  const height = imageData.height;
+  const newImageData = new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height
+  );
+  
+  const pixels = newImageData.data;
+
+  // Bayer matrices for ordered dithering
+  const bayer2x2 = [
+    [0, 2],
+    [3, 1]
+  ];
+
+  const bayer4x4 = [
+    [0, 8, 2, 10],
+    [12, 4, 14, 6],
+    [3, 11, 1, 9],
+    [15, 7, 13, 5]
+  ];
+
+  const bayer8x8 = [
+    [0, 32, 8, 40, 2, 34, 10, 42],
+    [48, 16, 56, 24, 50, 18, 58, 26],
+    [12, 44, 4, 36, 14, 46, 6, 38],
+    [60, 28, 52, 20, 62, 30, 54, 22],
+    [3, 35, 11, 43, 1, 33, 9, 41],
+    [51, 19, 59, 27, 49, 17, 57, 25],
+    [15, 47, 7, 39, 13, 45, 5, 37],
+    [63, 31, 55, 23, 61, 29, 53, 21]
+  ];
+
+  // Select appropriate Bayer matrix
+  let bayerMatrix, matrixDivisor;
+  if (matrixSize === 2) {
+    bayerMatrix = bayer2x2;
+    matrixDivisor = 4;
+  } else if (matrixSize === 8) {
+    bayerMatrix = bayer8x8;
+    matrixDivisor = 64;
+  } else {
+    bayerMatrix = bayer4x4;
+    matrixDivisor = 16;
+  }
+
+  const matrixLen = bayerMatrix.length;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      
+      const r = pixels[idx];
+      const g = pixels[idx + 1];
+      const b = pixels[idx + 2];
+      const a = pixels[idx + 3];
+
+      // Skip transparent pixels
+      if (a < 128) continue;
+
+      // Get threshold from Bayer matrix
+      const threshold = (bayerMatrix[y % matrixLen][x % matrixLen] / matrixDivisor - 0.5) * 64;
+
+      // Apply threshold to color
+      const ditheredColor = {
+        r: Math.max(0, Math.min(255, r + threshold)),
+        g: Math.max(0, Math.min(255, g + threshold)),
+        b: Math.max(0, Math.min(255, b + threshold))
+      };
+
+      // Find closest palette color
+      const closestColor = matchingFunction(ditheredColor, palette);
+
+      pixels[idx] = closestColor.r;
+      pixels[idx + 1] = closestColor.g;
+      pixels[idx + 2] = closestColor.b;
+    }
+  }
+
+  return newImageData;
+}
+
+// Atkinson dithering - HyperCard/MacPaint style (preserves highlights better)
+export function applyAtkinsonDithering(imageData, palette, matchingFunction = findClosestColor) {
+  const width = imageData.width;
+  const height = imageData.height;
+  const newImageData = new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height
+  );
+  
+  const pixels = newImageData.data;
+
+  // Helper to get pixel index
+  const getIndex = (x, y) => (y * width + x) * 4;
+
+  // Helper to distribute error to a neighboring pixel
+  const distributeError = (x, y, errorR, errorG, errorB, factor) => {
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
+    
+    const idx = getIndex(x, y);
+    const alpha = pixels[idx + 3];
+    
+    // Only distribute to non-transparent pixels
+    if (alpha >= 128) {
+      pixels[idx] = Math.max(0, Math.min(255, pixels[idx] + errorR * factor));
+      pixels[idx + 1] = Math.max(0, Math.min(255, pixels[idx + 1] + errorG * factor));
+      pixels[idx + 2] = Math.max(0, Math.min(255, pixels[idx + 2] + errorB * factor));
+    }
+  };
+
+  // Process pixels left-to-right, top-to-bottom
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = getIndex(x, y);
+      
+      const r = pixels[idx];
+      const g = pixels[idx + 1];
+      const b = pixels[idx + 2];
+      const a = pixels[idx + 3];
+
+      // Skip transparent pixels
+      if (a < 128) continue;
+
+      // Find closest palette color
+      const currentColor = { r, g, b };
+      const closestColor = matchingFunction(currentColor, palette);
+
+      // Calculate quantization error
+      const errorR = r - closestColor.r;
+      const errorG = g - closestColor.g;
+      const errorB = b - closestColor.b;
+
+      // Set the pixel to the palette color
+      pixels[idx] = closestColor.r;
+      pixels[idx + 1] = closestColor.g;
+      pixels[idx + 2] = closestColor.b;
+
+      // Distribute error to neighboring pixels (Atkinson matrix)
+      // Only distributes 75% of error (6/8), creating lighter results
+      //       X   1/8  1/8
+      // 1/8  1/8  1/8
+      //      1/8
+      const factor = 1/8;
+      distributeError(x + 1, y, errorR, errorG, errorB, factor);
+      distributeError(x + 2, y, errorR, errorG, errorB, factor);
+      distributeError(x - 1, y + 1, errorR, errorG, errorB, factor);
+      distributeError(x, y + 1, errorR, errorG, errorB, factor);
+      distributeError(x + 1, y + 1, errorR, errorG, errorB, factor);
+      distributeError(x, y + 2, errorR, errorG, errorB, factor);
+    }
+  }
+
+  return newImageData;
+}
+
+// Apply palette with custom matching strategy and optional dithering
+export function applyPaletteWithStrategy(imageData, palette, matchingFunction, ditheringMethod = 'none') {
+  // Apply dithering if requested
+  if (ditheringMethod === 'floyd-steinberg') {
+    return applyFloydSteinbergDithering(imageData, palette, matchingFunction);
+  } else if (ditheringMethod === 'ordered' || ditheringMethod === 'bayer') {
+    return applyOrderedDithering(imageData, palette, matchingFunction);
+  } else if (ditheringMethod === 'atkinson') {
+    return applyAtkinsonDithering(imageData, palette, matchingFunction);
+  }
+  
+  // No dithering - direct color replacement
   const newImageData = new ImageData(
     new Uint8ClampedArray(imageData.data),
     imageData.width,
@@ -287,38 +527,38 @@ export function applyPaletteWithStrategy(imageData, palette, matchingFunction) {
   return newImageData;
 }
 
-// Generate all 6 variations using different strategies
-export function generatePaletteVariations(imageData, palette) {
+// Generate all 6 variations using different strategies, with optional dithering
+export function generatePaletteVariations(imageData, palette, ditheringMethod = 'none') {
   return [
     {
       name: 'Luminosity Match',
       description: 'Matches by brightness, preserving light/dark contrast',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByLuminosity)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByLuminosity, ditheringMethod)
     },
     {
       name: 'Hue Match',
       description: 'Matches by color family, preserving the mood',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByHue)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByHue, ditheringMethod)
     },
     {
       name: 'Saturation Match',
       description: 'Matches by color vividness (vibrant vs muted)',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestBySaturation)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestBySaturation, ditheringMethod)
     },
     {
       name: 'Inverted Luminosity',
       description: 'Inverts brightness (dark becomes light, light becomes dark)',
-      imageData: applyPaletteWithStrategy(imageData, palette, findInvertedLuminosity)
+      imageData: applyPaletteWithStrategy(imageData, palette, findInvertedLuminosity, ditheringMethod)
     },
     {
       name: 'Complementary Hue',
       description: 'Maps to opposite colors on the color wheel',
-      imageData: applyPaletteWithStrategy(imageData, palette, findComplementaryHue)
+      imageData: applyPaletteWithStrategy(imageData, palette, findComplementaryHue, ditheringMethod)
     },
     {
       name: 'Perceptual Match',
       description: 'Standard RGB distance matching',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestColor)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestColor, ditheringMethod)
     }
   ];
 }
