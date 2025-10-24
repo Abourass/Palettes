@@ -228,7 +228,7 @@ export function findWeightedRGB(color, palette, weights = { r: 1, g: 1, b: 1 }) 
 }
 
 // Create optimal color mapping that preserves distinctness
-// Ensures each unique source color maps to a unique palette color when possible
+// Uses greedy assignment - each source color gets its best available match
 export function createColorMapping(sourceColors, targetPalette, matchingFunction = findClosestColor) {
   const mapping = new Map();
   const usedPaletteColors = new Set();
@@ -239,27 +239,22 @@ export function createColorMapping(sourceColors, targetPalette, matchingFunction
   for (const sourceColor of sortedSources) {
     const sourceKey = `${sourceColor.r},${sourceColor.g},${sourceColor.b}`;
     
-    // Find the best match from unused palette colors
+    // Find the best available match using the provided matching function
     let bestMatch = null;
     let bestDistance = Infinity;
     
-    for (const paletteColor of targetPalette) {
+    // Get available (unused) palette colors
+    const availablePaletteColors = targetPalette.filter(paletteColor => {
       const paletteKey = `${paletteColor.r},${paletteColor.g},${paletteColor.b}`;
-      
-      // Skip if this palette color is already used (unless we run out of options)
-      if (usedPaletteColors.has(paletteKey) && usedPaletteColors.size < targetPalette.length) {
-        continue;
-      }
-      
-      const distance = colorDistance(sourceColor, paletteColor);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestMatch = paletteColor;
-      }
-    }
+      return !usedPaletteColors.has(paletteKey);
+    });
     
-    // If all palette colors are used, fall back to closest match
-    if (!bestMatch) {
+    // If we have available colors, find the best match among them
+    if (availablePaletteColors.length > 0) {
+      // Use the matching function to find best match from available colors
+      bestMatch = matchingFunction(sourceColor, availablePaletteColors);
+    } else {
+      // No available colors left - fall back to any color from full palette
       bestMatch = matchingFunction(sourceColor, targetPalette);
     }
     
