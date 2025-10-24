@@ -5,6 +5,7 @@ import ImageGallery from './components/ImageGallery';
 import PaletteEditor from './components/PaletteEditor';
 import HexFileUpload from './components/HexFileUpload';
 import DitheringSelector from './components/DitheringSelector';
+import QuantizationSelector from './components/QuantizationSelector';
 import ColorHarmonyGenerator from './components/ColorHarmonyGenerator';
 import Button from './components/Button';
 import ImageDisplay from './components/ImageDisplay';
@@ -26,6 +27,7 @@ function App() {
   const [selectedImageData, setSelectedImageData] = createSignal(null);
   const [finalPalette, setFinalPalette] = createSignal(null);
   const [ditheringMethod, setDitheringMethod] = createSignal('none');
+  const [quantizationMode, setQuantizationMode] = createSignal('preserve');
 
   const handleImageLoad = (dataUrl) => {
     setUploadedImage(dataUrl);
@@ -51,14 +53,15 @@ function App() {
     // Generate images with the selected palette using all 6 different strategies
     if (originalImageData()) {
       const imageData = originalImageData();
+      const preserveDistinctness = quantizationMode() === 'preserve';
       
       // Generate all 6 variations with different color matching strategies
-      const variations = generatePaletteVariations(imageData, palette, ditheringMethod());
+      const variations = generatePaletteVariations(imageData, palette, ditheringMethod(), preserveDistinctness);
       
       // Generate 6 similar palettes and apply them
       const similarPalettes = generateSimilarPalettes(palette, 6);
       const similarResults = similarPalettes.map(p => {
-        const vars = generatePaletteVariations(imageData, p, ditheringMethod());
+        const vars = generatePaletteVariations(imageData, p, ditheringMethod(), preserveDistinctness);
         return vars[0]; // Use luminosity match for similar palettes
       });
       
@@ -80,13 +83,23 @@ function App() {
     
     // Reapply palette to original image using standard matching
     if (originalImageData()) {
-      const variations = generatePaletteVariations(originalImageData(), newPalette, ditheringMethod());
+      const preserveDistinctness = quantizationMode() === 'preserve';
+      const variations = generatePaletteVariations(originalImageData(), newPalette, ditheringMethod(), preserveDistinctness);
       setSelectedImageData(variations[5].imageData); // Use perceptual match
     }
   };
 
   const handleDitheringChange = (method) => {
     setDitheringMethod(method);
+    
+    // Regenerate variations if palette is already selected
+    if (currentPalette() && originalImageData()) {
+      handlePaletteSelect(selectedPaletteName(), currentPalette());
+    }
+  };
+
+  const handleQuantizationChange = (mode) => {
+    setQuantizationMode(mode);
     
     // Regenerate variations if palette is already selected
     if (currentPalette() && originalImageData()) {
@@ -208,6 +221,16 @@ function App() {
                 <DitheringSelector
                   selected={ditheringMethod()}
                   onSelect={handleDitheringChange}
+                />
+              </div>
+              
+              <Separator />
+              
+              <div class="mt-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Color Mapping Mode</h3>
+                <QuantizationSelector
+                  selected={quantizationMode()}
+                  onSelect={handleQuantizationChange}
                 />
               </div>
             </div>

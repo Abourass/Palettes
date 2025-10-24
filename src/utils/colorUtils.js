@@ -227,7 +227,51 @@ export function findWeightedRGB(color, palette, weights = { r: 1, g: 1, b: 1 }) 
   return closestColor;
 }
 
-// Apply palette to image
+// Create optimal color mapping that preserves distinctness
+// Ensures each unique source color maps to a unique palette color when possible
+export function createColorMapping(sourceColors, targetPalette, matchingFunction = findClosestColor) {
+  const mapping = new Map();
+  const usedPaletteColors = new Set();
+  
+  // Sort source colors by frequency (most common first) for better results
+  const sortedSources = [...sourceColors].sort((a, b) => (b.count || 0) - (a.count || 0));
+  
+  for (const sourceColor of sortedSources) {
+    const sourceKey = `${sourceColor.r},${sourceColor.g},${sourceColor.b}`;
+    
+    // Find the best match from unused palette colors
+    let bestMatch = null;
+    let bestDistance = Infinity;
+    
+    for (const paletteColor of targetPalette) {
+      const paletteKey = `${paletteColor.r},${paletteColor.g},${paletteColor.b}`;
+      
+      // Skip if this palette color is already used (unless we run out of options)
+      if (usedPaletteColors.has(paletteKey) && usedPaletteColors.size < targetPalette.length) {
+        continue;
+      }
+      
+      const distance = colorDistance(sourceColor, paletteColor);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMatch = paletteColor;
+      }
+    }
+    
+    // If all palette colors are used, fall back to closest match
+    if (!bestMatch) {
+      bestMatch = matchingFunction(sourceColor, targetPalette);
+    }
+    
+    const matchKey = `${bestMatch.r},${bestMatch.g},${bestMatch.b}`;
+    usedPaletteColors.add(matchKey);
+    mapping.set(sourceKey, bestMatch);
+  }
+  
+  return mapping;
+}
+
+// Apply palette to image (basic version - processes all pixels)
 export function applyPalette(imageData, palette) {
   const newImageData = new ImageData(
     new Uint8ClampedArray(imageData.data),
@@ -252,6 +296,46 @@ export function applyPalette(imageData, palette) {
     pixels[i] = closestColor.r;
     pixels[i + 1] = closestColor.g;
     pixels[i + 2] = closestColor.b;
+  }
+
+  return newImageData;
+}
+
+// Smart palette application that preserves color distinctness
+// Extracts unique colors first, creates optimal mapping, then applies it
+export function applyPalettePreserveDistinctness(imageData, palette, matchingFunction = findClosestColor) {
+  // Extract all unique colors from the image
+  const uniqueColors = extractColors(imageData, 256); // Get all unique colors
+  
+  // Create optimal mapping
+  const colorMapping = createColorMapping(uniqueColors, palette, matchingFunction);
+  
+  // Apply mapping
+  const newImageData = new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height
+  );
+  
+  const pixels = newImageData.data;
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+    const a = pixels[i + 3];
+
+    // Skip transparent pixels
+    if (a < 128) continue;
+
+    const colorKey = `${r},${g},${b}`;
+    const mappedColor = colorMapping.get(colorKey);
+    
+    if (mappedColor) {
+      pixels[i] = mappedColor.r;
+      pixels[i + 1] = mappedColor.g;
+      pixels[i + 2] = mappedColor.b;
+    }
   }
 
   return newImageData;
@@ -488,8 +572,8 @@ export function applyAtkinsonDithering(imageData, palette, matchingFunction = fi
 }
 
 // Apply palette with custom matching strategy and optional dithering
-export function applyPaletteWithStrategy(imageData, palette, matchingFunction, ditheringMethod = 'none') {
-  // Apply dithering if requested
+export function applyPaletteWithStrategy(imageData, palette, matchingFunction, ditheringMethod = 'none', preserveDistinctness = true) {
+  // For dithering, we need to process pixel-by-pixel (can't pre-map)
   if (ditheringMethod === 'floyd-steinberg') {
     return applyFloydSteinbergDithering(imageData, palette, matchingFunction);
   } else if (ditheringMethod === 'ordered' || ditheringMethod === 'bayer') {
@@ -498,7 +582,12 @@ export function applyPaletteWithStrategy(imageData, palette, matchingFunction, d
     return applyAtkinsonDithering(imageData, palette, matchingFunction);
   }
   
-  // No dithering - direct color replacement
+  // No dithering - use smart mapping to preserve color distinctness
+  if (preserveDistinctness) {
+    return applyPalettePreserveDistinctness(imageData, palette, matchingFunction);
+  }
+  
+  // Fallback: direct color replacement (old behavior)
   const newImageData = new ImageData(
     new Uint8ClampedArray(imageData.data),
     imageData.width,
@@ -528,37 +617,37 @@ export function applyPaletteWithStrategy(imageData, palette, matchingFunction, d
 }
 
 // Generate all 6 variations using different strategies, with optional dithering
-export function generatePaletteVariations(imageData, palette, ditheringMethod = 'none') {
+export function generatePaletteVariations(imageData, palette, ditheringMethod = 'none', preserveDistinctness = true) {
   return [
     {
       name: 'Luminosity Match',
       description: 'Matches by brightness, preserving light/dark contrast',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByLuminosity, ditheringMethod)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByLuminosity, ditheringMethod, preserveDistinctness)
     },
     {
       name: 'Hue Match',
       description: 'Matches by color family, preserving the mood',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByHue, ditheringMethod)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByHue, ditheringMethod, preserveDistinctness)
     },
     {
       name: 'Saturation Match',
       description: 'Matches by color vividness (vibrant vs muted)',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestBySaturation, ditheringMethod)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestBySaturation, ditheringMethod, preserveDistinctness)
     },
     {
       name: 'Inverted Luminosity',
       description: 'Inverts brightness (dark becomes light, light becomes dark)',
-      imageData: applyPaletteWithStrategy(imageData, palette, findInvertedLuminosity, ditheringMethod)
+      imageData: applyPaletteWithStrategy(imageData, palette, findInvertedLuminosity, ditheringMethod, preserveDistinctness)
     },
     {
       name: 'Complementary Hue',
       description: 'Maps to opposite colors on the color wheel',
-      imageData: applyPaletteWithStrategy(imageData, palette, findComplementaryHue, ditheringMethod)
+      imageData: applyPaletteWithStrategy(imageData, palette, findComplementaryHue, ditheringMethod, preserveDistinctness)
     },
     {
       name: 'Perceptual Match',
       description: 'Standard RGB distance matching',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestColor, ditheringMethod)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestColor, ditheringMethod, preserveDistinctness)
     }
   ];
 }
