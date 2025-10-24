@@ -46,14 +46,16 @@ function App() {
     if (originalImageData()) {
       const imageData = originalImageData();
       
-      // Apply selected palette
+      // Apply selected palette three times (same result, different references for UI)
       const result1 = applyPalette(imageData, palette);
+      const result2 = applyPalette(imageData, palette);
+      const result3 = applyPalette(imageData, palette);
       
       // Generate similar palettes and apply them
       const similarPalettes = generateSimilarPalettes(palette, 3);
       const similarResults = similarPalettes.map(p => applyPalette(imageData, p));
       
-      setProcessedImages([result1, result1, result1]);
+      setProcessedImages([result1, result2, result3]);
       setSimilarPaletteImages(similarResults);
     }
   };
@@ -240,7 +242,7 @@ function App() {
         </div>
 
         <footer class="text-center mt-12 text-gray-600 text-sm">
-          <p>Built with SolidJS, Tailwind CSS, and Kobalte</p>
+          <p>Built with SolidJS and Tailwind CSS</p>
         </footer>
       </div>
     </div>
