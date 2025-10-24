@@ -11,16 +11,24 @@ export default function ImageGallery(props) {
   return (
     <div class="w-full">
       <h3 class="text-lg font-semibold mb-4">{props.title}</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <For each={props.images}>
           {(imageData, index) => (
             <div
-              class={`border-2 rounded-lg p-2 cursor-pointer transition-all
+              class={`border-2 rounded-lg p-3 cursor-pointer transition-all hover:shadow-lg
                 ${selectedImage() === index() 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200 scale-105' 
+                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                 }`}
               onClick={() => handleImageClick(imageData, index())}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleImageClick(imageData, index());
+                }
+              }}
+              role="button"
+              tabIndex={0}
             >
               <canvas
                 ref={(canvas) => {
@@ -31,11 +39,11 @@ export default function ImageGallery(props) {
                     ctx.putImageData(imageData, 0, 0);
                   }
                 }}
-                class="w-full h-auto"
+                class="w-full h-auto rounded shadow-sm"
                 style={{ 'image-rendering': 'pixelated' }}
               />
               <Show when={props.labels && props.labels[index()]}>
-                <p class="text-sm text-gray-600 mt-2 text-center">
+                <p class="text-sm font-medium text-gray-700 mt-3 text-center">
                   {props.labels[index()]}
                 </p>
               </Show>
