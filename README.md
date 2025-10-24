@@ -22,9 +22,9 @@ A web application for analyzing and remapping pixel art color palettes. Built wi
 
 1. **Upload an Image**: Click or drag-and-drop a pixel art image
 2. **Select a Palette**: Choose from predefined palettes or upload a custom hex color file
-3. **Review Results**: View 9 different versions of your image:
+3. **Review Results**: View 12 different versions of your image:
    - 6 variations using different color matching algorithms
-   - 3 variations with algorithmically generated similar palettes
+   - 6 variations with algorithmically generated similar palettes
 4. **Refine**: Select your favorite version and fine-tune the colors
 5. **Download**: Save the recolored image and/or the color palette
 

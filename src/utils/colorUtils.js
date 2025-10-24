@@ -332,11 +332,21 @@ export function generateSimilarPalettes(palette, count = 3) {
       // Convert to HSL for easier manipulation
       const hsl = rgbToHsl(color.r, color.g, color.b);
       
-      // Adjust hue slightly
-      hsl.h = (hsl.h + (i + 1) * 30) % 360;
+      // Create more variation with 6 palettes:
+      // - Variations 1-3: Hue shifts of 30°, 60°, 90°
+      // - Variations 4-6: Hue shifts of 120°, 150°, 180° (more dramatic)
+      const hueShift = (i + 1) * 30;
+      hsl.h = (hsl.h + hueShift) % 360;
       
-      // Slight saturation adjustment
-      hsl.s = Math.max(0, Math.min(100, hsl.s + (i % 2 === 0 ? 10 : -10)));
+      // Alternate saturation adjustments for more diversity
+      if (i < 3) {
+        // First 3: subtle saturation changes
+        hsl.s = Math.max(0, Math.min(100, hsl.s + (i % 2 === 0 ? 10 : -10)));
+      } else {
+        // Last 3: more dramatic saturation and lightness changes
+        hsl.s = Math.max(0, Math.min(100, hsl.s + ((i % 2 === 0 ? 15 : -15))));
+        hsl.l = Math.max(0, Math.min(100, hsl.l + ((i % 3 === 0 ? 5 : -5))));
+      }
       
       const rgb = hslToRgb(hsl.h, hsl.s, hsl.l);
       return rgb;

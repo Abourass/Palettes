@@ -52,8 +52,8 @@ function App() {
       // Generate all 6 variations with different color matching strategies
       const variations = generatePaletteVariations(imageData, palette);
       
-      // Generate similar palettes and apply them
-      const similarPalettes = generateSimilarPalettes(palette, 3);
+      // Generate 6 similar palettes and apply them
+      const similarPalettes = generateSimilarPalettes(palette, 6);
       const similarResults = similarPalettes.map(p => {
         const vars = generatePaletteVariations(imageData, p);
         return vars[0]; // Use luminosity match for similar palettes
@@ -194,7 +194,7 @@ function App() {
                 <ImageGallery 
                   title="Similar Palettes"
                   images={similarPaletteImages().map(v => v.imageData)}
-                  labels={['Similar 1', 'Similar 2', 'Similar 3']}
+                  labels={['Similar 1', 'Similar 2', 'Similar 3', 'Similar 4', 'Similar 5', 'Similar 6']}
                   onSelect={(imageData, index) => handleImageSelect(imageData, index + 6)}
                 />
               </div>

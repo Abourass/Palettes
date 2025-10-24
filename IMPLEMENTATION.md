@@ -49,7 +49,7 @@
   4. **Inverted Luminosity**: Inverts brightness values (dark → light, light → dark) for dramatic effects
   5. **Complementary Hue**: Maps to opposite colors on the color wheel (hue + 180°)
   6. **Perceptual Match**: Standard Euclidean distance in RGB color space
-- Generates 3 additional variations using hue-shifted similar palettes
+- Generates 6 additional variations using algorithmically similar palettes with hue shifts (30°-180°) and saturation/lightness adjustments
 
 ### 4. Palette Refinement (Step 4)
 - Interactive color picker for each palette color
@@ -115,8 +115,9 @@ distance = √[(r1-r2)² + (g1-g2)² + (b1-b2)²]
 
 ### Similar Palette Generation
 - Converts RGB to HSL color space
-- Shifts hue by 30°, 60°, 90° for variations
-- Applies minor saturation adjustments
+- Generates 6 variations with progressive hue shifts:
+  - Variations 1-3: Subtle shifts (30°, 60°, 90°) with minor saturation adjustments
+  - Variations 4-6: Dramatic shifts (120°, 150°, 180°) with saturation and lightness changes
 - Converts back to RGB
 
 ### Color Space Conversions
