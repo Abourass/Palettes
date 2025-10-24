@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Pixel art palette analyzer and color remapper",
   "type": "module",
+  "packageManager": "pnpm@10.19.0",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
