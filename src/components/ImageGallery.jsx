@@ -28,7 +28,7 @@ export default function ImageGallery(props) {
                 }
               }}
               role="button"
-              tabindex={0}
+              tabIndex={0}
             >
               <canvas
                 ref={(canvas) => {

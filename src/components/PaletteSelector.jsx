@@ -23,7 +23,7 @@ export default function PaletteSelector(props) {
                 }
               }}
               role="button"
-              tabindex={0}
+              tabIndex={0}
             >
               <h4 class="font-semibold mb-3 text-gray-900">{name}</h4>
               <div class="flex flex-wrap gap-2">

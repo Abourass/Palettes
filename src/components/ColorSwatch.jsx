@@ -26,7 +26,7 @@ export default function ColorSwatch(props) {
         }
       }}
       role={onClick ? "button" : undefined}
-      tabindex={onClick ? 0 : undefined}
+      tabIndex={onClick ? 0 : undefined}
     />
   );
   
