@@ -1,0 +1,31 @@
+{
+  "name": "palettes",
+  "version": "1.0.0",
+  "description": "Pixel art palette analyzer and color remapper",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "pixel-art",
+    "palette",
+    "color",
+    "solidjs"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "solid-js": "^1.9.9",
+    "vite": "^7.1.12",
+    "vite-plugin-solid": "^2.11.10"
+  },
+  "devDependencies": {
+    "@kobalte/core": "^0.13.11",
+    "@tailwindcss/postcss": "^4.1.16",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16"
+  }
+}
