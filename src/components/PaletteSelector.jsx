@@ -16,13 +16,14 @@ export default function PaletteSelector(props) {
                   : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                 }`}
               onClick={() => props.onSelect?.(name, colors)}
-              role="button"
-              tabindex={0}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
                   props.onSelect?.(name, colors);
                 }
               }}
+              role="button"
+              tabindex={0}
             >
               <h4 class="font-semibold mb-3 text-gray-900">{name}</h4>
               <div class="flex flex-wrap gap-2">

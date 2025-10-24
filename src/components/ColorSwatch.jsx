@@ -19,6 +19,12 @@ export default function ColorSwatch(props) {
         'background-color': hexColor
       }}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onClick(e);
+        }
+      }}
       role={onClick ? "button" : undefined}
       tabindex={onClick ? 0 : undefined}
     />

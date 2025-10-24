@@ -21,13 +21,14 @@ export default function ImageGallery(props) {
                   : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                 }`}
               onClick={() => handleImageClick(imageData, index())}
-              role="button"
-              tabindex={0}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
                   handleImageClick(imageData, index());
                 }
               }}
+              role="button"
+              tabindex={0}
             >
               <canvas
                 ref={(canvas) => {
