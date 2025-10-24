@@ -1,20 +1,39 @@
-import { Show, onMount, onCleanup } from 'solid-js';
+import { Show, onMount, onCleanup, createEffect } from 'solid-js';
 
 export default function Lightbox(props) {
-  let dialogRef;
+  let canvasRef;
+
+  // Update canvas whenever imageData changes
+  createEffect(() => {
+    const imageData = props.imageData;
+    if (canvasRef && imageData) {
+      canvasRef.width = imageData.width;
+      canvasRef.height = imageData.height;
+      const ctx = canvasRef.getContext('2d');
+      ctx.putImageData(imageData, 0, 0);
+    }
+  });
 
   onMount(() => {
-    // Close on escape key
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && props.isOpen) {
+    // Close on escape key, navigate on arrow keys
+    const handleKeyboard = (e) => {
+      if (!props.isOpen) return;
+      
+      if (e.key === 'Escape') {
         props.onClose?.();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        props.onPrevious?.();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        props.onNext?.();
       }
     };
     
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleKeyboard);
     
     onCleanup(() => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyboard);
     });
   });
 
@@ -33,6 +52,23 @@ export default function Lightbox(props) {
         role="dialog"
         aria-modal="true"
       >
+        {/* Previous button */}
+        <Show when={props.hasPrevious}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              props.onPrevious?.();
+            }}
+            class="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-3 shadow-lg hover:shadow-xl transition-all hover:scale-110"
+            aria-label="Previous variation"
+            title="Previous (Left Arrow)"
+          >
+            <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </Show>
+
         <div class="relative max-w-7xl max-h-[90vh] bg-white rounded-lg shadow-2xl overflow-auto">
           {/* Close button */}
           <button
@@ -59,9 +95,18 @@ export default function Lightbox(props) {
               </p>
             </Show>
 
+            {/* Image counter */}
+            <Show when={props.currentIndex !== undefined && props.totalCount !== undefined}>
+              <p class="text-sm text-gray-500 mb-4 text-center">
+                {props.currentIndex + 1} of {props.totalCount}
+              </p>
+            </Show>
+
             <div class="flex justify-center">
               <canvas
                 ref={(canvas) => {
+                  canvasRef = canvas;
+                  // Initial render
                   if (canvas && props.imageData) {
                     canvas.width = props.imageData.width;
                     canvas.height = props.imageData.height;
@@ -100,6 +145,23 @@ export default function Lightbox(props) {
             </div>
           </div>
         </div>
+
+        {/* Next button */}
+        <Show when={props.hasNext}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              props.onNext?.();
+            }}
+            class="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-3 shadow-lg hover:shadow-xl transition-all hover:scale-110"
+            aria-label="Next variation"
+            title="Next (Right Arrow)"
+          >
+            <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </Show>
       </div>
     </Show>
   );

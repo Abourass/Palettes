@@ -4,7 +4,6 @@ import Lightbox from './Lightbox';
 export default function ImageGallery(props) {
   const [selectedImage, setSelectedImage] = createSignal(null);
   const [lightboxOpen, setLightboxOpen] = createSignal(false);
-  const [lightboxImage, setLightboxImage] = createSignal(null);
   const [lightboxIndex, setLightboxIndex] = createSignal(null);
 
   const handleImageClick = (imageData, index) => {
@@ -12,19 +11,46 @@ export default function ImageGallery(props) {
     props.onSelect?.(imageData, index);
   };
 
-  const handleLightboxOpen = (imageData, index, e) => {
+  const handleLightboxOpen = (index, e) => {
     e.stopPropagation(); // Prevent the card click handler
-    setLightboxImage(imageData);
     setLightboxIndex(index);
     setLightboxOpen(true);
   };
 
   const handleLightboxSelect = () => {
-    const imageData = lightboxImage();
     const index = lightboxIndex();
-    if (imageData !== null && index !== null) {
-      handleImageClick(imageData, index);
+    if (index !== null && props.images[index]) {
+      handleImageClick(props.images[index], index);
     }
+  };
+
+  const handlePrevious = () => {
+    const currentIndex = lightboxIndex();
+    if (currentIndex > 0) {
+      setLightboxIndex(currentIndex - 1);
+    }
+  };
+
+  const handleNext = () => {
+    const currentIndex = lightboxIndex();
+    if (currentIndex < props.images.length - 1) {
+      setLightboxIndex(currentIndex + 1);
+    }
+  };
+
+  const getCurrentImageData = () => {
+    const index = lightboxIndex();
+    return index !== null ? props.images[index] : null;
+  };
+
+  const getCurrentTitle = () => {
+    const index = lightboxIndex();
+    return props.labels && index !== null ? props.labels[index] : null;
+  };
+
+  const getCurrentDescription = () => {
+    const index = lightboxIndex();
+    return props.descriptions && index !== null ? props.descriptions[index] : null;
   };
 
   return (
@@ -51,7 +77,7 @@ export default function ImageGallery(props) {
             >
               {/* Magnifying glass button */}
               <button
-                onClick={(e) => handleLightboxOpen(imageData, index(), e)}
+                onClick={(e) => handleLightboxOpen(index(), e)}
                 class="absolute top-2 right-2 z-10 bg-white rounded-full p-2 shadow-md hover:bg-blue-50 hover:shadow-lg transition-all opacity-80 group-hover:opacity-100 hover:scale-110"
                 aria-label="View full size"
                 title="View full size"
@@ -91,11 +117,17 @@ export default function ImageGallery(props) {
       {/* Lightbox */}
       <Lightbox
         isOpen={lightboxOpen()}
-        imageData={lightboxImage()}
-        title={props.labels && lightboxIndex() !== null ? props.labels[lightboxIndex()] : null}
-        description={props.descriptions && lightboxIndex() !== null ? props.descriptions[lightboxIndex()] : null}
+        imageData={getCurrentImageData()}
+        title={getCurrentTitle()}
+        description={getCurrentDescription()}
+        currentIndex={lightboxIndex()}
+        totalCount={props.images.length}
+        hasPrevious={lightboxIndex() > 0}
+        hasNext={lightboxIndex() < props.images.length - 1}
         onClose={() => setLightboxOpen(false)}
         onSelect={handleLightboxSelect}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
       />
     </div>
   );
