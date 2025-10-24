@@ -349,7 +349,7 @@ describe('Palette Extraction from Image', () => {
 
     it('should handle quality parameter', () => {
       const imageData = createTestImageData(
-        Array(100).fill({ r: 255, g: 0, b: 0 })
+        Array.from({ length: 100 }, () => ({ r: 255, g: 0, b: 0 }))
       );
       
       const paletteHighQuality = extractPaletteFromImage(imageData, 5, 1);
