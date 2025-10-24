@@ -1,6 +1,6 @@
 import { For } from 'solid-js';
 import { PREDEFINED_PALETTES } from '../utils/palettes';
-import { rgbToHex } from '../utils/colorUtils';
+import ColorSwatch from './ColorSwatch';
 
 export default function PaletteSelector(props) {
   return (
@@ -10,24 +10,25 @@ export default function PaletteSelector(props) {
         <For each={Object.entries(PREDEFINED_PALETTES)}>
           {([name, colors]) => (
             <div
-              class={`border-2 rounded-lg p-4 cursor-pointer transition-all
+              class={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-lg
                 ${props.selectedPalette === name 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200' 
+                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                 }`}
               onClick={() => props.onSelect?.(name, colors)}
+              role="button"
+              tabindex={0}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  props.onSelect?.(name, colors);
+                }
+              }}
             >
-              <h4 class="font-medium mb-2">{name}</h4>
-              <div class="flex flex-wrap gap-1">
+              <h4 class="font-semibold mb-3 text-gray-900">{name}</h4>
+              <div class="flex flex-wrap gap-2">
                 <For each={colors}>
                   {(color) => (
-                    <div
-                      class="w-8 h-8 rounded border border-gray-300"
-                      style={{
-                        'background-color': rgbToHex(color.r, color.g, color.b)
-                      }}
-                      title={rgbToHex(color.r, color.g, color.b)}
-                    />
+                    <ColorSwatch color={color} size="sm" showTooltip={true} />
                   )}
                 </For>
               </div>

@@ -4,6 +4,9 @@ import PaletteSelector from './components/PaletteSelector';
 import ImageGallery from './components/ImageGallery';
 import PaletteEditor from './components/PaletteEditor';
 import HexFileUpload from './components/HexFileUpload';
+import Button from './components/Button';
+import ImageDisplay from './components/ImageDisplay';
+import Separator from './components/Separator';
 import { 
   extractColors, 
   applyPalette, 
@@ -120,31 +123,30 @@ function App() {
   };
 
   return (
-    <div class="min-h-screen bg-gray-100 py-8 px-4">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
       <div class="max-w-7xl mx-auto">
-        <header class="text-center mb-8">
-          <h1 class="text-4xl font-bold text-gray-900 mb-2">
+        <header class="text-center mb-12">
+          <h1 class="text-5xl font-bold text-gray-900 mb-3 tracking-tight">
             Palette Analyzer
           </h1>
-          <p class="text-gray-600">
+          <p class="text-lg text-gray-600">
             Upload pixel art, choose a palette, and refine the colors
           </p>
         </header>
 
         <div class="space-y-8">
           {/* Step 1: Upload Image */}
-          <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-semibold mb-4">Step 1: Upload Image</h2>
+          <div class="bg-white rounded-xl shadow-lg p-8 transition-all hover:shadow-xl">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Step 1: Upload Image</h2>
             <ImageUpload onImageLoad={handleImageLoad} />
             
             <Show when={uploadedImage()}>
-              <div class="mt-4">
-                <h3 class="text-lg font-semibold mb-2">Original Image</h3>
-                <img 
+              <div class="mt-6">
+                <Separator />
+                <h3 class="text-lg font-semibold mb-4 mt-6">Original Image</h3>
+                <ImageDisplay 
                   src={uploadedImage()} 
-                  alt="Uploaded" 
-                  class="max-w-md mx-auto border-2 border-gray-300 rounded"
-                  style={{ 'image-rendering': 'pixelated' }}
+                  alt="Uploaded pixel art"
                 />
               </div>
             </Show>
@@ -152,14 +154,16 @@ function App() {
 
           {/* Step 2: Select or Upload Palette */}
           <Show when={uploadedImage()}>
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-2xl font-semibold mb-4">Step 2: Choose Palette</h2>
+            <div class="bg-white rounded-xl shadow-lg p-8 transition-all hover:shadow-xl">
+              <h2 class="text-2xl font-semibold mb-6 text-gray-800">Step 2: Choose Palette</h2>
               
               <div class="mb-6">
                 <HexFileUpload onPaletteLoad={handleCustomPaletteLoad} />
               </div>
               
-              <div class="border-t pt-6">
+              <Separator />
+              
+              <div class="mt-6">
                 <PaletteSelector 
                   selectedPalette={selectedPaletteName()}
                   onSelect={handlePaletteSelect}
@@ -170,8 +174,8 @@ function App() {
 
           {/* Step 3: View Results */}
           <Show when={processedImages().length > 0}>
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-2xl font-semibold mb-4">Step 3: Choose Your Favorite</h2>
+            <div class="bg-white rounded-xl shadow-lg p-8 transition-all hover:shadow-xl">
+              <h2 class="text-2xl font-semibold mb-6 text-gray-800">Step 3: Choose Your Favorite</h2>
               
               <div class="mb-8">
                 <ImageGallery 
@@ -182,7 +186,9 @@ function App() {
                 />
               </div>
 
-              <div class="border-t pt-8">
+              <Separator />
+
+              <div class="mt-8">
                 <ImageGallery 
                   title="Similar Palettes"
                   images={similarPaletteImages()}
@@ -195,8 +201,8 @@ function App() {
 
           {/* Step 4: Refine and Download */}
           <Show when={finalPalette()}>
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-2xl font-semibold mb-4">Step 4: Refine & Download</h2>
+            <div class="bg-white rounded-xl shadow-lg p-8 transition-all hover:shadow-xl">
+              <h2 class="text-2xl font-semibold mb-6 text-gray-800">Step 4: Refine & Download</h2>
               
               <div class="mb-6">
                 <PaletteEditor 
@@ -207,7 +213,8 @@ function App() {
 
               <Show when={selectedImageData()}>
                 <div class="mb-6">
-                  <h3 class="text-lg font-semibold mb-2">Preview</h3>
+                  <Separator />
+                  <h3 class="text-lg font-semibold mb-4 mt-6">Preview</h3>
                   <canvas
                     ref={(canvas) => {
                       if (canvas && selectedImageData()) {
@@ -217,32 +224,34 @@ function App() {
                         ctx.putImageData(selectedImageData(), 0, 0);
                       }
                     }}
-                    class="max-w-md mx-auto border-2 border-gray-300 rounded"
+                    class="max-w-md mx-auto border-2 border-gray-300 rounded-lg shadow-md"
                     style={{ 'image-rendering': 'pixelated' }}
                   />
                 </div>
               </Show>
 
-              <div class="flex gap-4 justify-center">
-                <button
+              <Separator />
+
+              <div class="flex gap-4 justify-center mt-6">
+                <Button
                   onClick={downloadPalette}
-                  class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+                  variant="primary"
                 >
                   Download Palette
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={downloadImage}
-                  class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                  variant="secondary"
                 >
                   Download Image
-                </button>
+                </Button>
               </div>
             </div>
           </Show>
         </div>
 
         <footer class="text-center mt-12 text-gray-600 text-sm">
-          <p>Built with SolidJS and Tailwind CSS</p>
+          <p>Built with SolidJS, Tailwind CSS, and Kobalte</p>
         </footer>
       </div>
     </div>

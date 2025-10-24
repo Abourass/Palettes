@@ -1,5 +1,8 @@
-import { For, createSignal } from 'solid-js';
+import { For } from 'solid-js';
 import { rgbToHex, hexToRgb } from '../utils/colorUtils';
+import Button from './Button';
+import ColorSwatch from './ColorSwatch';
+import Separator from './Separator';
 
 export default function PaletteEditor(props) {
   const handleColorChange = (index, newHex) => {
@@ -27,28 +30,32 @@ export default function PaletteEditor(props) {
     <div class="w-full">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">Edit Palette</h3>
-        <button
+        <Button
           onClick={handleAddColor}
-          class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          variant="small"
         >
           Add Color
-        </button>
+        </Button>
       </div>
-      <div class="flex flex-wrap gap-3">
+      <Separator />
+      <div class="flex flex-wrap gap-4 mt-6">
         <For each={props.palette}>
           {(color, index) => (
             <div class="flex flex-col items-center gap-2">
-              <div class="relative">
+              <div class="relative group">
+                <ColorSwatch color={color} size="lg" showTooltip={false} />
                 <input
                   type="color"
                   value={rgbToHex(color.r, color.g, color.b)}
                   onInput={(e) => handleColorChange(index(), e.target.value)}
-                  class="w-16 h-16 rounded border-2 border-gray-300 cursor-pointer"
+                  class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  title="Click to change color"
                 />
                 {props.palette.length > 1 && (
                   <button
                     onClick={() => handleRemoveColor(index())}
-                    class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600"
+                    class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-all shadow-md opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    aria-label="Remove color"
                   >
                     ×
                   </button>

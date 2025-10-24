@@ -51,15 +51,15 @@ export default function ImageUpload(props) {
       >
         <label
           for="image-upload"
-          class={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-colors
+          class={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer transition-all
             ${dragActive() 
-              ? 'border-blue-500 bg-blue-50' 
-              : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+              ? 'border-blue-500 bg-blue-50 shadow-md scale-105' 
+              : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400 hover:shadow-sm'
             }`}
         >
           <div class="flex flex-col items-center justify-center pt-5 pb-6">
             <svg
-              class="w-10 h-10 mb-3 text-gray-400"
+              class={`w-12 h-12 mb-4 transition-colors ${dragActive() ? 'text-blue-500' : 'text-gray-400'}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -71,8 +71,8 @@ export default function ImageUpload(props) {
                 d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
               />
             </svg>
-            <p class="mb-2 text-sm text-gray-500">
-              <span class="font-semibold">Click to upload</span> or drag and drop
+            <p class="mb-2 text-sm text-gray-700 font-medium">
+              <span class="font-semibold text-blue-600">Click to upload</span> or drag and drop
             </p>
             <p class="text-xs text-gray-500">PNG, JPG, GIF (pixel art recommended)</p>
           </div>
