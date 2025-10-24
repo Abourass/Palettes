@@ -1,4 +1,4 @@
-import { createSignal, Show, createEffect } from 'solid-js';
+import { createSignal, Show } from 'solid-js';
 import ImageUpload from './components/ImageUpload';
 import PaletteSelector from './components/PaletteSelector';
 import ImageGallery from './components/ImageGallery';
