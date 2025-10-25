@@ -1,3 +1,5 @@
+import { getBlueNoiseValue, applyBlueNoiseThreshold } from './blueNoise.js';
+
 // Extract dominant colors from an image
 export function extractColors(imageData, maxColors = 16) {
   const pixels = imageData.data;
@@ -337,7 +339,7 @@ export function applyPalettePreserveDistinctness(imageData, palette, matchingFun
 }
 
 // Floyd-Steinberg dithering - distributes quantization error to neighboring pixels
-export function applyFloydSteinbergDithering(imageData, palette, matchingFunction = findClosestColor) {
+export function applyFloydSteinbergDithering(imageData, palette, matchingFunction = findClosestColor, intensity = 1.0) {
   const width = imageData.width;
   const height = imageData.height;
   const newImageData = new ImageData(
@@ -358,11 +360,11 @@ export function applyFloydSteinbergDithering(imageData, palette, matchingFunctio
     const idx = getIndex(x, y);
     const alpha = pixels[idx + 3];
     
-    // Only distribute to non-transparent pixels
+    // Only distribute to non-transparent pixels, scaled by intensity
     if (alpha >= 128) {
-      pixels[idx] = Math.max(0, Math.min(255, pixels[idx] + errorR * factor));
-      pixels[idx + 1] = Math.max(0, Math.min(255, pixels[idx + 1] + errorG * factor));
-      pixels[idx + 2] = Math.max(0, Math.min(255, pixels[idx + 2] + errorB * factor));
+      pixels[idx] = Math.max(0, Math.min(255, pixels[idx] + errorR * factor * intensity));
+      pixels[idx + 1] = Math.max(0, Math.min(255, pixels[idx + 1] + errorG * factor * intensity));
+      pixels[idx + 2] = Math.max(0, Math.min(255, pixels[idx + 2] + errorB * factor * intensity));
     }
   };
 
@@ -407,7 +409,7 @@ export function applyFloydSteinbergDithering(imageData, palette, matchingFunctio
 }
 
 // Ordered/Bayer dithering - uses a threshold map for retro aesthetic
-export function applyOrderedDithering(imageData, palette, matchingFunction = findClosestColor, matrixSize = 4) {
+export function applyOrderedDithering(imageData, palette, matchingFunction = findClosestColor, matrixSize = 4, intensity = 1.0) {
   const width = imageData.width;
   const height = imageData.height;
   const newImageData = new ImageData(
@@ -469,8 +471,8 @@ export function applyOrderedDithering(imageData, palette, matchingFunction = fin
       // Skip transparent pixels
       if (a < 128) continue;
 
-      // Get threshold from Bayer matrix
-      const threshold = (bayerMatrix[y % matrixLen][x % matrixLen] / matrixDivisor - 0.5) * 64;
+      // Get threshold from Bayer matrix, scaled by intensity
+      const threshold = (bayerMatrix[y % matrixLen][x % matrixLen] / matrixDivisor - 0.5) * 64 * intensity;
 
       // Apply threshold to color
       const ditheredColor = {
@@ -492,7 +494,7 @@ export function applyOrderedDithering(imageData, palette, matchingFunction = fin
 }
 
 // Atkinson dithering - HyperCard/MacPaint style (preserves highlights better)
-export function applyAtkinsonDithering(imageData, palette, matchingFunction = findClosestColor) {
+export function applyAtkinsonDithering(imageData, palette, matchingFunction = findClosestColor, intensity = 1.0) {
   const width = imageData.width;
   const height = imageData.height;
   const newImageData = new ImageData(
@@ -513,11 +515,11 @@ export function applyAtkinsonDithering(imageData, palette, matchingFunction = fi
     const idx = getIndex(x, y);
     const alpha = pixels[idx + 3];
     
-    // Only distribute to non-transparent pixels
+    // Only distribute to non-transparent pixels, scaled by intensity
     if (alpha >= 128) {
-      pixels[idx] = Math.max(0, Math.min(255, pixels[idx] + errorR * factor));
-      pixels[idx + 1] = Math.max(0, Math.min(255, pixels[idx + 1] + errorG * factor));
-      pixels[idx + 2] = Math.max(0, Math.min(255, pixels[idx + 2] + errorB * factor));
+      pixels[idx] = Math.max(0, Math.min(255, pixels[idx] + errorR * factor * intensity));
+      pixels[idx + 1] = Math.max(0, Math.min(255, pixels[idx + 1] + errorG * factor * intensity));
+      pixels[idx + 2] = Math.max(0, Math.min(255, pixels[idx + 2] + errorB * factor * intensity));
     }
   };
 
@@ -566,15 +568,63 @@ export function applyAtkinsonDithering(imageData, palette, matchingFunction = fi
   return newImageData;
 }
 
+// Blue Noise dithering - modern, artifact-free dithering using blue noise patterns
+export function applyBlueNoiseDithering(imageData, palette, matchingFunction = findClosestColor, intensity = 1.0) {
+  const width = imageData.width;
+  const height = imageData.height;
+  const newImageData = new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height
+  );
+  
+  const pixels = newImageData.data;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      
+      const r = pixels[idx];
+      const g = pixels[idx + 1];
+      const b = pixels[idx + 2];
+      const a = pixels[idx + 3];
+
+      // Skip transparent pixels
+      if (a < 128) continue;
+
+      // Get blue noise threshold for this position
+      const threshold = getBlueNoiseValue(x, y);
+
+      // Apply blue noise threshold to color channels
+      const ditheredColor = {
+        r: applyBlueNoiseThreshold(r, threshold, intensity),
+        g: applyBlueNoiseThreshold(g, threshold, intensity),
+        b: applyBlueNoiseThreshold(b, threshold, intensity)
+      };
+
+      // Find closest palette color
+      const closestColor = matchingFunction(ditheredColor, palette);
+
+      pixels[idx] = closestColor.r;
+      pixels[idx + 1] = closestColor.g;
+      pixels[idx + 2] = closestColor.b;
+    }
+  }
+
+  return newImageData;
+}
+
 // Apply palette with custom matching strategy and optional dithering
-export function applyPaletteWithStrategy(imageData, palette, matchingFunction, ditheringMethod = 'none', preserveDistinctness = true) {
+export function applyPaletteWithStrategy(imageData, palette, matchingFunction, ditheringMethod = 'none', preserveDistinctness = true, ditherIntensity = 1.0) {
   // For dithering, we need to process pixel-by-pixel (can't pre-map)
   if (ditheringMethod === 'floyd-steinberg') {
-    return applyFloydSteinbergDithering(imageData, palette, matchingFunction);
+    return applyFloydSteinbergDithering(imageData, palette, matchingFunction, ditherIntensity);
   } else if (ditheringMethod === 'ordered' || ditheringMethod === 'bayer') {
-    return applyOrderedDithering(imageData, palette, matchingFunction);
+    return applyOrderedDithering(imageData, palette, matchingFunction, 4, ditherIntensity);
   } else if (ditheringMethod === 'atkinson') {
-    return applyAtkinsonDithering(imageData, palette, matchingFunction);
+    return applyAtkinsonDithering(imageData, palette, matchingFunction, ditherIntensity);
+  } else if (ditheringMethod === 'blue-noise') {
+    return applyBlueNoiseDithering(imageData, palette, matchingFunction, ditherIntensity);
   }
   
   // No dithering - use smart mapping to preserve color distinctness
@@ -612,37 +662,37 @@ export function applyPaletteWithStrategy(imageData, palette, matchingFunction, d
 }
 
 // Generate all 6 variations using different strategies, with optional dithering
-export function generatePaletteVariations(imageData, palette, ditheringMethod = 'none', preserveDistinctness = true) {
+export function generatePaletteVariations(imageData, palette, ditheringMethod = 'none', preserveDistinctness = true, ditherIntensity = 1.0) {
   return [
     {
       name: 'Luminosity Match',
       description: 'Matches by brightness, preserving light/dark contrast',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByLuminosity, ditheringMethod, preserveDistinctness)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByLuminosity, ditheringMethod, preserveDistinctness, ditherIntensity)
     },
     {
       name: 'Hue Match',
       description: 'Matches by color family, preserving the mood',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByHue, ditheringMethod, preserveDistinctness)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestByHue, ditheringMethod, preserveDistinctness, ditherIntensity)
     },
     {
       name: 'Saturation Match',
       description: 'Matches by color vividness (vibrant vs muted)',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestBySaturation, ditheringMethod, preserveDistinctness)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestBySaturation, ditheringMethod, preserveDistinctness, ditherIntensity)
     },
     {
       name: 'Inverted Luminosity',
       description: 'Inverts brightness (dark becomes light, light becomes dark)',
-      imageData: applyPaletteWithStrategy(imageData, palette, findInvertedLuminosity, ditheringMethod, preserveDistinctness)
+      imageData: applyPaletteWithStrategy(imageData, palette, findInvertedLuminosity, ditheringMethod, preserveDistinctness, ditherIntensity)
     },
     {
       name: 'Complementary Hue',
       description: 'Maps to opposite colors on the color wheel',
-      imageData: applyPaletteWithStrategy(imageData, palette, findComplementaryHue, ditheringMethod, preserveDistinctness)
+      imageData: applyPaletteWithStrategy(imageData, palette, findComplementaryHue, ditheringMethod, preserveDistinctness, ditherIntensity)
     },
     {
       name: 'Perceptual Match',
       description: 'Standard RGB distance matching',
-      imageData: applyPaletteWithStrategy(imageData, palette, findClosestColor, ditheringMethod, preserveDistinctness)
+      imageData: applyPaletteWithStrategy(imageData, palette, findClosestColor, ditheringMethod, preserveDistinctness, ditherIntensity)
     }
   ];
 }

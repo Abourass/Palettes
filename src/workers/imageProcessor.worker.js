@@ -55,7 +55,7 @@ self.onmessage = function(e) {
 
 // Generate all 6 palette variations
 function handleGenerateVariations(data, id) {
-  const { imageData, palette, ditheringMethod, preserveDistinctness } = data;
+  const { imageData, palette, ditheringMethod, preserveDistinctness, ditherIntensity = 1.0 } = data;
   
   // Reconstruct ImageData object (it gets serialized during transfer)
   const imgData = new ImageData(
@@ -74,7 +74,7 @@ function handleGenerateVariations(data, id) {
   ];
   
   const variations = matchingFunctions.map(({ name, description, fn }) => {
-    const result = applyPaletteWithStrategy(imgData, palette, fn, ditheringMethod, preserveDistinctness);
+    const result = applyPaletteWithStrategy(imgData, palette, fn, ditheringMethod, preserveDistinctness, ditherIntensity);
     return {
       name,
       description,
@@ -95,7 +95,7 @@ function handleGenerateVariations(data, id) {
 
 // Generate similar palettes and apply them
 function handleGenerateSimilarPalettes(data, id) {
-  const { imageData, palette, ditheringMethod, preserveDistinctness, count } = data;
+  const { imageData, palette, ditheringMethod, preserveDistinctness, count, ditherIntensity = 1.0 } = data;
   
   // Reconstruct ImageData object
   const imgData = new ImageData(
@@ -107,7 +107,7 @@ function handleGenerateSimilarPalettes(data, id) {
   const similarPalettes = generateSimilarPalettes(palette, count);
   
   const similarResults = similarPalettes.map(p => {
-    const result = applyPaletteWithStrategy(imgData, p, findClosestByLuminosity, ditheringMethod, preserveDistinctness);
+    const result = applyPaletteWithStrategy(imgData, p, findClosestByLuminosity, ditheringMethod, preserveDistinctness, ditherIntensity);
     return {
       name: 'Similar Palette',
       description: 'Palette with adjusted hue',
@@ -128,7 +128,7 @@ function handleGenerateSimilarPalettes(data, id) {
 
 // Apply a single palette
 function handleApplyPalette(data, id) {
-  const { imageData, palette, ditheringMethod, preserveDistinctness, matchingStrategy } = data;
+  const { imageData, palette, ditheringMethod, preserveDistinctness, matchingStrategy, ditherIntensity = 1.0 } = data;
   
   // Reconstruct ImageData object
   const imgData = new ImageData(
@@ -159,7 +159,7 @@ function handleApplyPalette(data, id) {
       matchingFunction = findClosestColor;
   }
   
-  const result = applyPaletteWithStrategy(imgData, palette, matchingFunction, ditheringMethod, preserveDistinctness);
+  const result = applyPaletteWithStrategy(imgData, palette, matchingFunction, ditheringMethod, preserveDistinctness, ditherIntensity);
   
   self.postMessage({
     type: 'paletteApplied',

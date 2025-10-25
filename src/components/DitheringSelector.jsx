@@ -20,6 +20,11 @@ const DITHERING_OPTIONS = [
     value: 'atkinson',
     name: 'Atkinson',
     description: 'HyperCard style, preserves highlights'
+  },
+  {
+    value: 'blue-noise',
+    name: 'Blue Noise',
+    description: 'Modern, artifact-free, smooth transitions'
   }
 ];
 

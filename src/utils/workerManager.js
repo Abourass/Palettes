@@ -88,12 +88,13 @@ class ImageProcessorWorkerManager {
   }
 
   // Generate palette variations
-  async generateVariations(imageData, palette, ditheringMethod, preserveDistinctness) {
+  async generateVariations(imageData, palette, ditheringMethod, preserveDistinctness, ditherIntensity = 1.0) {
     const result = await this.sendMessage('generateVariations', {
       imageData,
       palette,
       ditheringMethod,
-      preserveDistinctness
+      preserveDistinctness,
+      ditherIntensity
     });
     
     // Reconstruct ImageData objects
@@ -104,13 +105,14 @@ class ImageProcessorWorkerManager {
   }
 
   // Generate similar palettes
-  async generateSimilarPalettes(imageData, palette, ditheringMethod, preserveDistinctness, count = 6) {
+  async generateSimilarPalettes(imageData, palette, ditheringMethod, preserveDistinctness, count = 6, ditherIntensity = 1.0) {
     const result = await this.sendMessage('generateSimilarPalettes', {
       imageData,
       palette,
       ditheringMethod,
       preserveDistinctness,
-      count
+      count,
+      ditherIntensity
     });
     
     // Reconstruct ImageData objects
@@ -121,13 +123,14 @@ class ImageProcessorWorkerManager {
   }
 
   // Apply palette to image
-  async applyPalette(imageData, palette, ditheringMethod, preserveDistinctness, matchingStrategy = 'perceptual') {
+  async applyPalette(imageData, palette, ditheringMethod, preserveDistinctness, matchingStrategy = 'perceptual', ditherIntensity = 1.0) {
     const result = await this.sendMessage('applyPalette', {
       imageData,
       palette,
       ditheringMethod,
       preserveDistinctness,
-      matchingStrategy
+      matchingStrategy,
+      ditherIntensity
     });
     
     return this.deserializeImageData(result);

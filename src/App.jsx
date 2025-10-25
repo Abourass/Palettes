@@ -5,6 +5,7 @@ import ImageGallery from './components/ImageGallery';
 import PaletteEditor from './components/PaletteEditor';
 import HexFileUpload from './components/HexFileUpload';
 import DitheringSelector from './components/DitheringSelector';
+import DitherIntensitySlider from './components/DitherIntensitySlider';
 import QuantizationSelector from './components/QuantizationSelector';
 import ColorHarmonyGenerator from './components/ColorHarmonyGenerator';
 import Button from './components/Button';
@@ -24,6 +25,7 @@ function App() {
   const [selectedImageData, setSelectedImageData] = createSignal(null);
   const [finalPalette, setFinalPalette] = createSignal(null);
   const [ditheringMethod, setDitheringMethod] = createSignal('none');
+  const [ditherIntensity, setDitherIntensity] = createSignal(1.0);
   const [quantizationMode, setQuantizationMode] = createSignal('preserve');
   const [isProcessing, setIsProcessing] = createSignal(false);
   const [processingMessage, setProcessingMessage] = createSignal('');
@@ -71,7 +73,8 @@ function App() {
           imageData,
           palette,
           ditheringMethod(),
-          preserveDistinctness
+          preserveDistinctness,
+          ditherIntensity()
         );
         
         setProcessingMessage('Generating similar palettes...');
@@ -82,7 +85,8 @@ function App() {
           palette,
           ditheringMethod(),
           preserveDistinctness,
-          6
+          6,
+          ditherIntensity()
         );
         
         setProcessedVariations(variations);
@@ -156,6 +160,15 @@ function App() {
     
     // Regenerate variations if palette is already selected
     if (currentPalette() && originalImageData()) {
+      handlePaletteSelect(selectedPaletteName(), currentPalette());
+    }
+  };
+
+  const handleDitherIntensityChange = (intensity) => {
+    setDitherIntensity(intensity);
+    
+    // Regenerate variations if palette is already selected and dithering is active
+    if (currentPalette() && originalImageData() && ditheringMethod() !== 'none') {
       handlePaletteSelect(selectedPaletteName(), currentPalette());
     }
   };
@@ -285,6 +298,11 @@ function App() {
                 <DitheringSelector
                   selected={ditheringMethod()}
                   onSelect={handleDitheringChange}
+                />
+                <DitherIntensitySlider
+                  value={ditherIntensity()}
+                  ditheringMethod={ditheringMethod()}
+                  onChange={handleDitherIntensityChange}
                 />
               </div>
               
