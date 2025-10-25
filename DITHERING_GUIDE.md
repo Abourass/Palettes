@@ -121,7 +121,7 @@ This guide helps you choose the right dithering method for your needs.
 
 ## Dither Intensity Control
 
-All dithering methods support variable intensity from 0% to 200%:
+All active dithering methods (except "No Dithering") support variable intensity from 0% to 200%:
 
 ### When to Adjust Intensity
 

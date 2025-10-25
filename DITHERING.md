@@ -251,6 +251,6 @@ For large images, consider:
 - **Floyd-Steinberg** (1976): Developed by Robert Floyd and Louis Steinberg
 - **Ordered Dithering** (1973): Based on Bayer's work on halftone patterns
 - **Atkinson** (1983): Created by Bill Atkinson for MacPaint/HyperCard
-- **Blue Noise** (2000s): Modern technique based on perceptual research, used in rendering and printing
+- **Blue Noise** (1980s-1990s): Modern technique based on perceptual research and void-and-cluster algorithms, widely used in rendering and printing
 
 Each algorithm reflects different priorities in the tradeoff between speed, quality, and aesthetic goals. Blue noise represents the state-of-the-art in perceptually-optimized dithering.

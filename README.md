@@ -15,7 +15,7 @@ A web application for analyzing and remapping pixel art color palettes with adva
 - **Smart Color Mapping**: 🎨 **NEW!** Choose how colors are matched:
   - **Preserve Distinctness Mode** (Recommended for Pixel Art): Ensures each unique source color maps to a different palette color - prevents unwanted color merging that can ruin pixel art
   - **Closest Match Mode**: Standard nearest-color matching - may merge similar colors together
-- **Dithering Options**: 5 dithering methods to create smoother color transitions:
+- **Dithering Options**: 5 active dithering methods plus No Dithering option to create smoother color transitions:
   - **No Dithering**: Clean, sharp color transitions
   - **Floyd-Steinberg**: Most popular error diffusion, smooth gradients (recommended)
   - **Ordered/Bayer**: Retro crosshatch pattern for vintage aesthetic
