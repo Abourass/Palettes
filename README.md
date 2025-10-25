@@ -15,11 +15,13 @@ A web application for analyzing and remapping pixel art color palettes with adva
 - **Smart Color Mapping**: 🎨 **NEW!** Choose how colors are matched:
   - **Preserve Distinctness Mode** (Recommended for Pixel Art): Ensures each unique source color maps to a different palette color - prevents unwanted color merging that can ruin pixel art
   - **Closest Match Mode**: Standard nearest-color matching - may merge similar colors together
-- **Dithering Options**: 4 dithering methods to create smoother color transitions:
+- **Dithering Options**: 5 dithering methods to create smoother color transitions:
   - **No Dithering**: Clean, sharp color transitions
   - **Floyd-Steinberg**: Most popular error diffusion, smooth gradients (recommended)
   - **Ordered/Bayer**: Retro crosshatch pattern for vintage aesthetic
   - **Atkinson**: HyperCard/MacPaint style, preserves highlights
+  - **Blue Noise**: Modern, artifact-free dithering with natural appearance
+  - **Variable Intensity**: Adjustable dither strength from 0% to 200% for fine-tuned control
 - **6 Color Matching Strategies**: Generates 6 variations using different algorithms:
   - **Luminosity Match**: Preserves light/dark contrast by matching brightness
   - **Hue Match**: Maintains color families (reds stay red-ish, blues stay blue-ish)
@@ -79,6 +81,14 @@ For complete guide, see [COLOR_HARMONY.md](COLOR_HARMONY.md) or [Quick Reference
 - **Floyd-Steinberg**: Best for photographs and smooth gradients
 - **Ordered/Bayer**: Best for retro/vintage aesthetic, consistent patterns
 - **Atkinson**: Best for high-contrast images, comic art, preserving highlights
+- **Blue Noise**: Best for modern, high-quality dithering with minimal visible patterns
+
+### Dither Intensity
+
+All dithering methods (except "No Dithering") support adjustable intensity from 0% to 200%:
+- **0-50%**: Subtle dithering, minimal artifacts
+- **100%**: Standard dithering strength (default)
+- **150-200%**: Strong dithering for dramatic effects
 
 For more details, see [DITHERING_GUIDE.md](DITHERING_GUIDE.md)
 
