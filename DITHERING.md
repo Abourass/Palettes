@@ -1,6 +1,6 @@
 # Dithering Implementation
 
-This document describes the three dithering algorithms implemented in the Palette Analyzer application.
+This document describes the dithering algorithms implemented in the Palette Analyzer application.
 
 ## Overview
 
@@ -94,6 +94,51 @@ Key characteristics:
 - May look too light in some images
 - Not suitable for all content types
 
+### 4. Blue Noise Dithering
+
+**Best for:** Modern, high-quality dithering with natural appearance
+
+Blue noise dithering uses a specially crafted noise pattern where energy is concentrated in high frequencies. This creates a more natural, less patterned appearance compared to ordered dithering while being faster than error diffusion methods.
+
+**Characteristics:**
+```
+Uses a 64×64 blue noise texture pattern
+Tiles seamlessly for any image size
+Deterministic and reproducible
+```
+
+Key characteristics:
+1. Minimal visible patterns or artifacts
+2. Perceptually uniform noise distribution
+3. Fast processing (no error propagation)
+4. Spatially decorrelated noise
+
+**Pros:**
+- Modern, clean appearance
+- Minimal visible patterns
+- Fast processing
+- No directional artifacts
+- Works well with all image types
+
+**Cons:**
+- Less "retro" than ordered dithering
+- Slightly less smooth than Floyd-Steinberg in some cases
+- Requires 64×64 texture pattern
+
+## Variable Dither Intensity
+
+All dithering methods (except "No Dithering") support adjustable intensity:
+
+- **0.0 (0%)**: No dithering effect
+- **0.5 (50%)**: Subtle dithering
+- **1.0 (100%)**: Standard dithering strength (default)
+- **2.0 (200%)**: Strong dithering for dramatic effects
+
+The intensity parameter scales the dithering strength:
+- For error diffusion (Floyd-Steinberg, Atkinson): Scales error distribution
+- For ordered dithering: Scales threshold matrix values
+- For blue noise: Scales noise amplitude
+
 ## Usage in Code
 
 ### Basic Usage
@@ -102,10 +147,11 @@ Key characteristics:
 import { 
   applyFloydSteinbergDithering,
   applyOrderedDithering,
-  applyAtkinsonDithering 
+  applyAtkinsonDithering,
+  applyBlueNoiseDithering
 } from './utils/colorUtils';
 
-// Apply Floyd-Steinberg dithering
+// Apply Floyd-Steinberg dithering with default intensity
 const dithered = applyFloydSteinbergDithering(imageData, palette);
 
 // Apply Ordered/Bayer dithering with 4×4 matrix (default)
@@ -113,6 +159,24 @@ const ordered = applyOrderedDithering(imageData, palette);
 
 // Apply Atkinson dithering
 const atkinson = applyAtkinsonDithering(imageData, palette);
+
+// Apply Blue Noise dithering
+const blueNoise = applyBlueNoiseDithering(imageData, palette);
+```
+
+### With Intensity Control
+
+All dithering functions accept an intensity parameter:
+
+```javascript
+// Subtle dithering (50% intensity)
+const subtle = applyFloydSteinbergDithering(imageData, palette, findClosestColor, 0.5);
+
+// Standard dithering (100% intensity, default)
+const normal = applyBlueNoiseDithering(imageData, palette, findClosestColor, 1.0);
+
+// Strong dithering (150% intensity)
+const strong = applyOrderedDithering(imageData, palette, findClosestColor, 4, 1.5);
 ```
 
 ### With Custom Matching Functions
@@ -140,13 +204,15 @@ const lumMatch = applyOrderedDithering(
 
 ### Via generatePaletteVariations
 
-The `generatePaletteVariations` function now accepts a dithering method:
+The `generatePaletteVariations` function now accepts a dithering method and intensity:
 
 ```javascript
 const variations = generatePaletteVariations(
   imageData, 
   palette, 
-  'floyd-steinberg'  // or 'ordered', 'atkinson', 'none'
+  'floyd-steinberg',  // or 'ordered', 'atkinson', 'blue-noise', 'none'
+  true,               // preserveDistinctness
+  1.0                 // dither intensity (0-2)
 );
 ```
 
@@ -158,24 +224,33 @@ The dithering selector allows users to choose between:
 2. **Floyd-Steinberg** - Smooth, recommended for most cases
 3. **Ordered/Bayer** - Retro crosshatch pattern
 4. **Atkinson** - HyperCard style, preserves highlights
+5. **Blue Noise** - Modern, artifact-free dithering
 
-The selection is reactive - changing the dithering method automatically regenerates all palette variations.
+The dither intensity slider appears when a dithering method is selected:
+- Range: 0% to 200%
+- Default: 100%
+- Real-time updates when adjusted
+
+The selection is reactive - changing the dithering method or intensity automatically regenerates all palette variations.
 
 ## Performance Considerations
 
 - **Floyd-Steinberg**: Medium speed, requires sequential processing
 - **Ordered**: Fastest, can be parallelized
 - **Atkinson**: Similar to Floyd-Steinberg, slightly more error distribution
+- **Blue Noise**: Fast, no error propagation, easily parallelizable
 
 For large images, consider:
-- Using ordered dithering for real-time preview
+- Using ordered or blue noise dithering for real-time preview
 - Applying error diffusion methods (Floyd-Steinberg/Atkinson) for final output
 - Downscaling very large images before dithering
+- Reducing intensity for faster preview
 
 ## Historical Context
 
 - **Floyd-Steinberg** (1976): Developed by Robert Floyd and Louis Steinberg
 - **Ordered Dithering** (1973): Based on Bayer's work on halftone patterns
 - **Atkinson** (1983): Created by Bill Atkinson for MacPaint/HyperCard
+- **Blue Noise** (1980s-1990s): Modern technique based on perceptual research and void-and-cluster algorithms, widely used in rendering and printing
 
-Each algorithm reflects different priorities in the tradeoff between speed, quality, and aesthetic goals.
+Each algorithm reflects different priorities in the tradeoff between speed, quality, and aesthetic goals. Blue noise represents the state-of-the-art in perceptually-optimized dithering.

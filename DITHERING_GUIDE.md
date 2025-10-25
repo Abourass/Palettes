@@ -10,6 +10,7 @@ This guide helps you choose the right dithering method for your needs.
 | **Floyd-Steinberg** | Photos, realistic art | Smooth gradients | Medium |
 | **Ordered/Bayer** | Retro games, vintage look | Crosshatch pattern | Fast |
 | **Atkinson** | High-contrast art, comics | Lighter, airy feel | Medium |
+| **Blue Noise** | Modern, professional work | Natural, minimal patterns | Fast |
 
 ## When to Use Each Method
 
@@ -95,6 +96,52 @@ This guide helps you choose the right dithering method for your needs.
 
 ---
 
+### Blue Noise Dithering
+✅ **Use when:**
+- Creating professional, modern artwork
+- You want minimal visible patterns
+- Quality and natural appearance are priorities
+- Working with photographs or gradients
+- Need fast processing without artifacts
+
+❌ **Avoid when:**
+- You specifically want a retro/vintage look
+- Ordered patterns are desired for aesthetic reasons
+- Historical accuracy for old systems is required
+
+**Example:** Converting a photograph to a limited palette while maintaining professional quality
+
+**Visual characteristics:**
+- Minimal visible patterns
+- Natural, organic appearance
+- Even noise distribution
+- No directional artifacts
+
+---
+
+## Dither Intensity Control
+
+All active dithering methods (except "No Dithering") support variable intensity from 0% to 200%:
+
+### When to Adjust Intensity
+
+**Low Intensity (0-50%)**
+- Subtle effects on already-optimized images
+- Preventing over-dithering
+- Maintaining cleaner appearance
+
+**Normal Intensity (100%)**
+- Standard dithering strength
+- Best for most use cases
+- Default setting
+
+**High Intensity (150-200%)**
+- Dramatic artistic effects
+- Strong color transitions
+- Creating heavily stylized looks
+
+---
+
 ## Combining with Color Matching Strategies
 
 Each dithering method can be combined with the 6 color matching strategies:
@@ -103,15 +150,21 @@ Each dithering method can be combined with the 6 color matching strategies:
 
 **For Photographs:**
 - Floyd-Steinberg + Luminosity Match
+- Blue Noise + Perceptual Match
 - Floyd-Steinberg + Perceptual Match
 
 **For Artistic/Stylized Results:**
 - Ordered + Hue Match (strong color families)
 - Atkinson + Saturation Match (vivid, comic-like)
+- Blue Noise + Hue Match (modern, colorful)
 
 **For Retro Gaming:**
 - Ordered + Perceptual Match
 - No Dithering + Luminosity Match
+
+**For Modern/Professional:**
+- Blue Noise + Luminosity Match
+- Blue Noise + Perceptual Match
 
 **For Experimental/Abstract:**
 - Any dithering + Complementary Hue
